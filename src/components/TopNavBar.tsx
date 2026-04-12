@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, LayoutGrid, List, Heart, Search, User } from "lucide-react";
+import { Home, LayoutGrid, List, Heart, Search, User, Terminal } from "lucide-react";
 
 export default function TopNavBar() {
   const pathname = usePathname();
@@ -32,6 +32,9 @@ export default function TopNavBar() {
           </Link>
           <Link href="/favorites" className={`${getLinkClass("/favorites")} flex items-center gap-1`}>
             <Heart size={16} /> Favorites
+          </Link>
+          <Link href="/developer" className={`${getLinkClass("/developer")} flex items-center gap-1`}>
+            <Terminal size={16} /> Developer
           </Link>
         </div>
         <div className="flex items-center gap-4">
