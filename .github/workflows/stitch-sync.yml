@@ -1,0 +1,34 @@
+name: Sync Stitch Design Updates
+
+on:
+  repository_dispatch:
+    types: [stitch-design-updated]
+
+jobs:
+  sync_stitch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Stitch Sync
+        env:
+          STITCH_API_KEY: ${{ secrets.STITCH_API_KEY }}
+          STITCH_PROJECT_ID: "4942387246633198123"
+        run: node scripts/sync-stitch.js
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "style: auto-sync design tokens and components from Stitch" || echo "No changes to commit"
+          git push
