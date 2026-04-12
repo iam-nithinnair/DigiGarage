@@ -4,6 +4,9 @@ on:
   repository_dispatch:
     types: [stitch-design-updated]
 
+permissions:
+  contents: write
+
 jobs:
   sync_stitch:
     runs-on: ubuntu-latest
