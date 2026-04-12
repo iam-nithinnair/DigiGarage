@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>THE DIGITAL CURATOR | Scale Model Mastery</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error-container": "#93000a",
+                    "surface-container-highest": "#333537",
+                    "on-primary-fixed": "#410000",
+                    "outline": "#af8781",
+                    "secondary": "#b9c8de",
+                    "secondary-container": "#39485a",
+                    "surface-variant": "#333537",
+                    "on-surface-variant": "#e8bcb5",
+                    "inverse-surface": "#e2e2e5",
+                    "secondary-fixed-dim": "#b9c8de",
+                    "on-secondary-fixed": "#0d1c2d",
+                    "error": "#ffb4ab",
+                    "on-secondary-container": "#a7b6cc",
+                    "on-tertiary-container": "#e3e9f1",
+                    "on-primary-fixed-variant": "#930000",
+                    "on-secondary-fixed-variant": "#39485a",
+                    "primary-fixed": "#ffdad4",
+                    "primary": "#ffb4a8",
+                    "on-error": "#690005",
+                    "inverse-primary": "#c00000",
+                    "on-tertiary": "#2b3137",
+                    "tertiary-fixed-dim": "#c1c7cf",
+                    "primary-fixed-dim": "#ffb4a8",
+                    "on-error-container": "#ffdad6",
+                    "on-secondary": "#233143",
+                    "surface-container-lowest": "#0c0e10",
+                    "primary-container": "#d40000",
+                    "surface-bright": "#38393c",
+                    "on-primary-container": "#ffe3de",
+                    "surface-container-low": "#1a1c1e",
+                    "surface-dim": "#121416",
+                    "surface": "#121416",
+                    "surface-tint": "#ffb4a8",
+                    "background": "#121416",
+                    "tertiary": "#c1c7cf",
+                    "on-surface": "#e2e2e5",
+                    "secondary-fixed": "#d4e4fa",
+                    "on-background": "#e2e2e5",
+                    "on-primary": "#690000",
+                    "tertiary-fixed": "#dde3eb",
+                    "outline-variant": "#5e3f3a",
+                    "inverse-on-surface": "#2f3133",
+                    "surface-container-high": "#282a2c",
+                    "on-tertiary-fixed": "#161c22",
+                    "surface-container": "#1e2022",
+                    "on-tertiary-fixed-variant": "#41474e"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Space Grotesk"],
+                    "body": ["Inter"],
+                    "label": ["Space Grotesk"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(18, 20, 22, 0.6);
+            backdrop-filter: blur(20px);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #121416;
+            color: #e2e2e5;
+        }
+        h1, h2, h3, .heading-h1 {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-surface-dim selection:bg-primary-container selection:text-white">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-[#121416]/60 backdrop-blur-xl transition-all ease-out duration-200">
+<div class="flex justify-between items-center px-8 py-4 max-w-[1440px] mx-auto">
+<div class="text-xl font-bold tracking-tighter text-[#e2e2e5] font-['Space_Grotesk']">THE DIGITAL CURATOR</div>
+<div class="hidden md:flex items-center gap-8 font-['Space_Grotesk'] tracking-tight">
+<a class="text-[#D40000] border-b-2 border-[#D40000] pb-1" href="#">Collection</a>
+<a class="text-[#e2e2e5] hover:text-[#D40000] transition-colors" href="#">ISO List</a>
+<a class="text-[#e2e2e5] hover:text-[#D40000] transition-colors" href="#">Favorites</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-[#282a2c]/50 rounded-full transition-all text-[#e2e2e5]">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="p-2 hover:bg-[#282a2c]/50 rounded-full transition-all text-[#e2e2e5]">
+<span class="material-symbols-outlined">person</span>
+</button>
+</div>
+</div>
+</nav>
+<main class="pt-20">
+<!-- hero-section -->
+<section class="relative min-h-[921px] flex flex-col justify-center px-8 md:px-20 overflow-hidden" id="hero-section">
+<div class="absolute inset-0 z-0">
+<img class="w-full h-full object-cover opacity-60 brightness-75" data-alt="Close-up of a high-detail 1:18 scale red Ferrari racing car on a dark reflective surface with dramatic museum-style spot lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQqEqi2vEE-u2--OV92WPWgBQNNgW-v35Rpf_Ueo35pPRqecBYqVLKWZmHeOE36uYbVHpjXW4GDJR9x4Thu__6ASGoLxKcBOfEnLCh33jgBQ-i9tvSAb9fMQtcQh_qS8HqsrQVrQ30UG3lyclUzB_EM90BElZNExZOVCzVz5DgygFcgz2S39KE_I8hb0e-q6Z8iM9hW_YTTrbF3zK65solLxJv0oJi3YxtRB_I9zU8i0yglceSzR_xnwAQSwpkPUnsMwjZviXlu_Y"/>
+<div class="absolute inset-0 bg-gradient-to-r from-surface-dim via-surface-dim/40 to-transparent"></div>
+</div>
+<div class="relative z-10 max-w-3xl flex flex-col gap-8">
+<div class="flex flex-col gap-2">
+<span class="label-sm font-['Space_Grotesk'] uppercase tracking-[0.2em] text-primary/80">Premium Heritage</span>
+<h1 class="text-6xl md:text-8xl font-black font-['Space_Grotesk'] tracking-tighter leading-[0.9] text-on-surface">
+                        Your Digital Garage, <br/><span class="text-primary-container">Perfected.</span>
+</h1>
+</div>
+<p class="text-xl text-on-surface/70 font-body max-w-xl">
+                    Archiving automotive legends with surgical precision. The definitive platform for the modern scale model collector.
+                </p>
+<div class="flex gap-4 pt-4">
+<button class="px-8 py-4 bg-primary-container text-on-primary-container font-['Space_Grotesk'] font-bold uppercase tracking-widest hover:brightness-110 transition-all flex items-center gap-2">
+                        Explore Collection
+                        <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</section>
+<!-- my-collections-section -->
+<section class="py-24 px-8 md:px-20 bg-surface flex flex-col gap-12" id="my-collections-section">
+<div class="flex justify-between items-end">
+<div class="flex flex-col gap-2">
+<h2 class="text-4xl font-bold font-['Space_Grotesk'] tracking-tight">My Collections</h2>
+<div class="h-1 w-20 bg-primary-container"></div>
+</div>
+<div class="flex gap-2">
+<button class="p-3 bg-surface-container hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="p-3 bg-surface-container hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+<div class="flex overflow-x-auto gap-8 pb-8 no-scrollbar scroll-smooth">
+<!-- Card 1 -->
+<div class="min-w-[400px] flex flex-col gap-6 group">
+<div class="aspect-[4/3] overflow-hidden bg-surface-container-low relative">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="Profile shot of a classic 1967 Ford Mustang scale model in a studio setting with moody lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBIoFtxTXlDcG61bh0rtDeHfYK_MGw0sOK2lqJdvXMR-j_ol7L6xfXgipZbvBH9gqNIPuoKKgSLOVem-A0_04oRui5Dg3FlYtdyzr4D9mRl4E1_Ge22SaAnK0Gqvb7cVF3wUof3ZeY75ZaUVH6jehk_ZIL8tf5BoIhy40K9WBqTQCwVI24USqtI5sEz0LWiYlZhIvx87wBiN61sNThUDmLyixf6CBBFUQ1iOaaUT2_Bx8oMjt1ppRZTw7Y-L13WKZ6QLbuMu5gtTWY"/>
+<div class="absolute top-4 right-4 px-3 py-1 bg-surface-bright/90 backdrop-blur font-['Space_Grotesk'] text-xs font-bold uppercase tracking-widest">Die-Cast</div>
+</div>
+<div class="flex flex-col gap-2">
+<div class="flex justify-between items-start">
+<h3 class="text-2xl font-bold font-['Space_Grotesk']">1967 Ford Mustang</h3>
+<span class="font-['Space_Grotesk'] text-sm text-primary-container font-bold">1:18</span>
+</div>
+<div class="flex gap-4 text-xs font-['Space_Grotesk'] uppercase tracking-widest text-on-surface/50">
+<span>Year: 1967</span>
+<span>•</span>
+<span>Mint Condition</span>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="min-w-[400px] flex flex-col gap-6 group">
+<div class="aspect-[4/3] overflow-hidden bg-surface-container-low relative">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="Vibrant 2022 Porsche 911 GT3 scale model in silver with yellow calipers focused in sharp detail" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGHw74Q0AnfX-7FLdxue1ef_RtSkeT_4Q1sxDG-nj6SQH3bPt3-LDbkwyRHiYTWRATQ1naLdR1Ag5dBk2_yicOGClPxyaDpR8ITxrBjAlhHSJVkZJI6uPU1xo6N_3g4NdlxjciuejaQmx7Pc3KJHb6hssXfmb1mZ-P3jAkZqfyUpk5s2z5bq7h62pGWFsMBatFg9HCnFWHdcj3oI3zzVmu7wxinv-SgGS42DlVZfSrJ3ZEtXCpEF3vsK798jNga2bJzTYQJaaOa4Q"/>
+<div class="absolute top-4 right-4 px-3 py-1 bg-surface-bright/90 backdrop-blur font-['Space_Grotesk'] text-xs font-bold uppercase tracking-widest">Resin</div>
+</div>
+<div class="flex flex-col gap-2">
+<div class="flex justify-between items-start">
+<h3 class="text-2xl font-bold font-['Space_Grotesk']">2022 Porsche 911 GT3</h3>
+<span class="font-['Space_Grotesk'] text-sm text-primary-container font-bold">1:64</span>
+</div>
+<div class="flex gap-4 text-xs font-['Space_Grotesk'] uppercase tracking-widest text-on-surface/50">
+<span>Year: 2022</span>
+<span>•</span>
+<span>Exotic Series</span>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="min-w-[400px] flex flex-col gap-6 group">
+<div class="aspect-[4/3] overflow-hidden bg-surface-container-low relative">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="Elegant Lamborghini Miura scale model in orange paint sitting on a minimalist dark pedestal" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBFx0J6UaYKcm0tXl7Ki3AKKTciDU_IzSWJXhjspqmzGX5DKrGlsj6uBQbjMWmQO54eQlP8THPkraxQEWD9f7qbJRHPWzxixdVwLSTno5byXSZFx6kY1mVLbQDv3YYrXR6nSiXXuxl-UAXUYSAdNUMSJST8S2LAhB-UN9tvPHMw9sXNxhHhLDrVkG_qOG5mxO8DvCt0qnCnH1i1c0f22yr4eM-zHN63HfyxRFjAm5M8LqHUM6IXWLUyqADTpD4bxPXYplcZvHR59o8"/>
+<div class="absolute top-4 right-4 px-3 py-1 bg-surface-bright/90 backdrop-blur font-['Space_Grotesk'] text-xs font-bold uppercase tracking-widest">Limited</div>
+</div>
+<div class="flex flex-col gap-2">
+<div class="flex justify-between items-start">
+<h3 class="text-2xl font-bold font-['Space_Grotesk']">Lamborghini Miura</h3>
+<span class="font-['Space_Grotesk'] text-sm text-primary-container font-bold">1:18</span>
+</div>
+<div class="flex gap-4 text-xs font-['Space_Grotesk'] uppercase tracking-widest text-on-surface/50">
+<span>Year: 1966</span>
+<span>•</span>
+<span>Historical Masterpiece</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- iso-section -->
+<section class="py-24 px-8 md:px-20 bg-surface-container-low flex flex-col gap-12" id="iso-section">
+<div class="flex flex-col gap-2 items-center text-center">
+<span class="label-sm font-['Space_Grotesk'] uppercase tracking-[0.3em] text-primary-container">Wishlist</span>
+<h2 class="text-5xl font-black font-['Space_Grotesk'] tracking-tighter">In Search Of</h2>
+</div>
+<div class="max-w-5xl mx-auto w-full flex flex-col gap-4">
+<!-- ISO Item 1 -->
+<div class="bg-surface p-8 flex flex-col md:flex-row justify-between items-center gap-8 hover:bg-surface-container-high transition-colors group">
+<div class="flex flex-col gap-1">
+<h3 class="text-2xl font-bold font-['Space_Grotesk']">Nissan Skyline GT-R R34 (Nismo)</h3>
+<div class="flex gap-4 mt-2">
+<span class="px-2 py-1 bg-surface-container-highest text-[10px] font-bold font-['Space_Grotesk'] uppercase tracking-tighter">Target Price: $250</span>
+<span class="px-2 py-1 bg-primary-container text-[10px] font-bold font-['Space_Grotesk'] uppercase tracking-tighter">Rarity: Ultra-Rare</span>
+</div>
+</div>
+<button class="px-6 py-3 border border-outline-variant/30 hover:bg-primary-container hover:text-white transition-all font-['Space_Grotesk'] uppercase text-xs tracking-widest font-bold">
+                        Search Sellers
+                    </button>
+</div>
+<!-- ISO Item 2 -->
+<div class="bg-surface p-8 flex flex-col md:flex-row justify-between items-center gap-8 hover:bg-surface-container-high transition-colors group">
+<div class="flex flex-col gap-1">
+<h3 class="text-2xl font-bold font-['Space_Grotesk']">McLaren F1 GTR</h3>
+<div class="flex gap-4 mt-2">
+<span class="px-2 py-1 bg-surface-container-highest text-[10px] font-bold font-['Space_Grotesk'] uppercase tracking-tighter">Target Price: $400</span>
+<span class="px-2 py-1 bg-primary-container text-[10px] font-bold font-['Space_Grotesk'] uppercase tracking-tighter">Rarity: Legendary</span>
+</div>
+</div>
+<button class="px-6 py-3 border border-outline-variant/30 hover:bg-primary-container hover:text-white transition-all font-['Space_Grotesk'] uppercase text-xs tracking-widest font-bold">
+                        Search Sellers
+                    </button>
+</div>
+</div>
+</section>
+<!-- favorites-section -->
+<section class="py-24 px-8 md:px-20 bg-surface flex flex-col gap-16" id="favorites-section">
+<div class="flex flex-col gap-4">
+<h2 class="text-6xl font-black font-['Space_Grotesk'] tracking-tighter text-on-surface">The Favorites</h2>
+<p class="body-md text-on-surface/60 max-w-2xl">The crown jewels of the collection. Curated for their historical significance, technical complexity, and sheer beauty.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+<!-- Favorite 1 -->
+<div class="flex flex-col gap-8 group">
+<div class="relative aspect-video overflow-hidden shadow-2xl">
+<img class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" data-alt="Exquisite detail of a 1962 Ferrari 250 GTO model in Rosso Corsa red, focused on the iconic front grille" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrbOGU53rz4Q2uJJ5CCl7UxEBELo1580YcXpwnEn8cJls29fiLJpyHAFtPtFOATGRYR_UrqyZyPonX2Lqg5oBSTPBBqAWq_38Gq1eZUGT9yJGvsOHZt8UabtUZK_0jNiI-9eP6pSykFi9I6WpLi_-xQ4zzdnZx8OBx4JyiVFWiNekMvZDQsyfWDr1AvwvEVPqdM82DAu-mk69t6-34FtKnCImt8cEGt02u7ViBO4wTRXnR2KTjdzafmFnqiJfhQVtbumb7dnsonp4"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60"></div>
+<div class="absolute bottom-8 left-8">
+<span class="font-['Space_Grotesk'] text-xs font-bold uppercase tracking-[0.3em] text-primary">Hall of Fame</span>
+</div>
+</div>
+<div class="flex flex-col gap-4">
+<h3 class="text-4xl font-black font-['Space_Grotesk'] tracking-tighter">1962 Ferrari 250 GTO</h3>
+<p class="body-md text-on-surface/70 leading-relaxed">
+                            The pinnacle of automotive design. This 1:18 scale replica features over 1,200 individual parts, functional steering, and a hand-stitched leather interior that mirrors the legendary original.
+                        </p>
+<a class="font-['Space_Grotesk'] text-xs font-bold uppercase tracking-widest flex items-center gap-2 group-hover:text-primary transition-colors" href="#">
+                            View Deep Dive <span class="material-symbols-outlined text-sm">trending_flat</span>
+</a>
+</div>
+</div>
+<!-- Favorite 2 -->
+<div class="flex flex-col gap-8 group">
+<div class="relative aspect-video overflow-hidden shadow-2xl">
+<img class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" data-alt="Futuristic Bugatti Chiron scale model in duo-tone blue, showcasing aerodynamic curves under cold studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkc4LdkqHLBARJJfaCyABlF7acS6xTtQZG41Dhrx8VIEpkelIjAEIXxjYZ1FbpwGEv3lgV-evIQYFaLgqH2OnHhUttEy3R3JL5p-1ysvploWNqZH769xXb2AZYDOHSlG7ts6wx3_wLGres7QUZOE1ifyNgl3WiqJmTDyHTFJb4t8v6Yeq6PUi4ZGZXnPoE48Vt58qI6yt6rtmoNg6Ql3eG3Qp-KYYLe4MilfHwQ0eOeRaSyJG3C0yC6xZg-aVwU9vW_YYhMZqA7gY"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60"></div>
+<div class="absolute bottom-8 left-8">
+<span class="font-['Space_Grotesk'] text-xs font-bold uppercase tracking-[0.3em] text-primary">Modern Legend</span>
+</div>
+</div>
+<div class="flex flex-col gap-4">
+<h3 class="text-4xl font-black font-['Space_Grotesk'] tracking-tighter">Bugatti Chiron</h3>
+<p class="body-md text-on-surface/70 leading-relaxed">
+                            A triumph of modern engineering. This high-end resin model captures the aggressive posture and complex aerodynamics of the 1,500hp monster, finished in authentic French Racing Blue.
+                        </p>
+<a class="font-['Space_Grotesk'] text-xs font-bold uppercase tracking-widest flex items-center gap-2 group-hover:text-primary transition-colors" href="#">
+                            View Deep Dive <span class="material-symbols-outlined text-sm">trending_flat</span>
+</a>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-[#121416] w-full border-t border-[#5e3f3a]/15">
+<div class="flex flex-col md:flex-row justify-between items-center px-12 py-12 gap-8 max-w-[1440px] mx-auto">
+<div class="flex flex-col gap-2">
+<div class="text-lg font-black text-[#e2e2e5] font-['Space_Grotesk']">THE DIGITAL CURATOR</div>
+<div class="text-[#e2e2e5]/60 font-['Space_Grotesk'] text-[10px] uppercase tracking-[0.1em]">© 2024 THE DIGITAL CURATOR. PRECISION ENGINEERED.</div>
+</div>
+<div class="flex gap-8 items-center">
+<a class="font-['Space_Grotesk'] text-[10px] uppercase tracking-[0.1em] text-[#e2e2e5]/60 hover:text-[#D40000] transition-all" href="#">Terms of Service</a>
+<a class="font-['Space_Grotesk'] text-[10px] uppercase tracking-[0.1em] text-[#e2e2e5]/60 hover:text-[#D40000] transition-all" href="#">Privacy Policy</a>
+<a class="font-['Space_Grotesk'] text-[10px] uppercase tracking-[0.1em] text-[#e2e2e5]/60 hover:text-[#D40000] transition-all" href="#">Contact Support</a>
+<a class="font-['Space_Grotesk'] text-[10px] uppercase tracking-[0.1em] text-[#e2e2e5]/60 hover:text-[#D40000] transition-all" href="#">Archive</a>
+</div>
+<div class="flex gap-4">
+<button class="w-10 h-10 flex items-center justify-center border border-outline-variant/20 hover:border-primary-container transition-colors">
+<span class="material-symbols-outlined text-sm">share</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center border border-outline-variant/20 hover:border-primary-container transition-colors">
+<span class="material-symbols-outlined text-sm">language</span>
+</button>
+</div>
+</div>
+</footer>
+</body></html>

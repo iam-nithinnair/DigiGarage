@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Collection | THE DIGITAL CURATOR</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary": "#b9c8de",
+                      "primary": "#ffb4a8",
+                      "background": "#121416",
+                      "on-primary-fixed": "#410000",
+                      "on-primary-container": "#ffe3de",
+                      "on-secondary": "#233143",
+                      "on-surface": "#e2e2e5",
+                      "surface-container-lowest": "#0c0e10",
+                      "surface-container-highest": "#333537",
+                      "on-secondary-fixed": "#0d1c2d",
+                      "tertiary-container": "#636970",
+                      "primary-fixed": "#ffdad4",
+                      "surface-bright": "#38393c",
+                      "secondary-fixed-dim": "#b9c8de",
+                      "inverse-primary": "#c00000",
+                      "tertiary": "#c1c7cf",
+                      "surface-variant": "#333537",
+                      "surface-tint": "#ffb4a8",
+                      "on-error": "#690005",
+                      "primary-container": "#d40000",
+                      "secondary-fixed": "#d4e4fa",
+                      "on-error-container": "#ffdad6",
+                      "tertiary-fixed-dim": "#c1c7cf",
+                      "outline-variant": "#5e3f3a",
+                      "inverse-surface": "#e2e2e5",
+                      "outline": "#af8781",
+                      "error": "#ffb4ab",
+                      "surface": "#121416",
+                      "on-surface-variant": "#e8bcb5",
+                      "on-secondary-fixed-variant": "#39485a",
+                      "surface-container": "#1e2022",
+                      "surface-container-low": "#1a1c1e",
+                      "on-tertiary-fixed": "#161c22",
+                      "tertiary-fixed": "#dde3eb",
+                      "on-tertiary-fixed-variant": "#41474e",
+                      "on-background": "#e2e2e5",
+                      "surface-dim": "#121416",
+                      "error-container": "#93000a",
+                      "primary-fixed-dim": "#ffb4a8",
+                      "inverse-on-surface": "#2f3133",
+                      "on-tertiary-container": "#e3e9f1",
+                      "on-tertiary": "#2b3137",
+                      "surface-container-high": "#282a2c",
+                      "on-secondary-container": "#a7b6cc",
+                      "on-primary-fixed-variant": "#930000",
+                      "secondary-container": "#39485a",
+                      "on-primary": "#690000"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "fontFamily": {
+                      "headline": ["Space Grotesk"],
+                      "body": ["Inter"],
+                      "label": ["Space Grotesk"]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-header {
+            background: rgba(18, 20, 22, 0.6);
+            backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-primary-container selection:text-white">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 glass-header">
+<div class="flex justify-between items-center px-8 py-4 max-w-[1440px] mx-auto">
+<div class="text-xl font-bold tracking-tighter text-[#e2e2e5] font-headline">THE DIGITAL CURATOR</div>
+<div class="hidden md:flex items-center gap-8 font-headline tracking-tight">
+<a class="text-[#e2e2e5] hover:text-[#D40000] transition-colors ease-out duration-200" href="#">Home</a>
+<a class="text-[#D40000] border-b-2 border-[#D40000] pb-1" href="#">Collection</a>
+<a class="text-[#e2e2e5] hover:text-[#D40000] transition-colors ease-out duration-200" href="#">ISO List</a>
+<a class="text-[#e2e2e5] hover:text-[#D40000] transition-colors ease-out duration-200" href="#">Favorites</a>
+</div>
+<div class="flex items-center gap-4">
+<div class="p-2 hover:bg-[#282a2c]/50 rounded-full transition-all duration-200 cursor-pointer">
+<span class="material-symbols-outlined text-[#e2e2e5]" data-icon="person">person</span>
+</div>
+</div>
+</div>
+</nav>
+<main class="pt-32 pb-24 px-8 max-w-[1440px] mx-auto">
+<!-- Header Section -->
+<header class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+<div>
+<span class="font-label text-[10px] uppercase tracking-[0.2em] text-primary mb-2 block">Archive Overview</span>
+<h1 class="text-5xl md:text-6xl font-headline font-bold tracking-tighter text-on-surface">My Collection</h1>
+</div>
+<button class="bg-primary-container text-on-primary-container font-headline font-bold px-8 py-4 flex items-center gap-2 hover:brightness-110 transition-all duration-200 active:scale-95 group">
+<span class="material-symbols-outlined text-xl" data-icon="add">add</span>
+                ADD TO COLLECTION
+            </button>
+</header>
+<div class="flex flex-col lg:flex-row gap-12">
+<!-- Filter Sidebar -->
+<aside class="w-full lg:w-64 space-y-10 shrink-0" id="filter-sidebar">
+<div>
+<h3 class="font-label text-[10px] uppercase tracking-[0.2em] text-on-surface/40 mb-6">Sort By</h3>
+<div class="relative">
+<select class="w-full bg-surface-container-lowest border-b-2 border-outline-variant/15 text-on-surface font-headline py-3 px-0 focus:border-primary-container focus:ring-0 appearance-none cursor-pointer">
+<option>Year: Newest First</option>
+<option>Year: Oldest First</option>
+<option>Name: A-Z</option>
+<option>Name: Z-A</option>
+</select>
+<span class="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface/40" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+<div>
+<h3 class="font-label text-[10px] uppercase tracking-[0.2em] text-on-surface/40 mb-6">Series</h3>
+<div class="space-y-3">
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="w-5 h-5 bg-surface-container-high border-none text-primary-container rounded-sm focus:ring-offset-background" type="checkbox"/>
+<span class="font-headline text-sm group-hover:text-primary transition-colors">Die-Cast</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="w-5 h-5 bg-surface-container-high border-none text-primary-container rounded-sm focus:ring-offset-background" type="checkbox"/>
+<span class="font-headline text-sm group-hover:text-primary transition-colors">Resin</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="w-5 h-5 bg-surface-container-high border-none text-primary-container rounded-sm focus:ring-offset-background" type="checkbox"/>
+<span class="font-headline text-sm group-hover:text-primary transition-colors">Composite</span>
+</label>
+</div>
+</div>
+<div>
+<h3 class="font-label text-[10px] uppercase tracking-[0.2em] text-on-surface/40 mb-6">Manufacturer</h3>
+<div class="space-y-3">
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="w-5 h-5 bg-surface-container-high border-none text-primary-container rounded-sm focus:ring-offset-background" type="checkbox"/>
+<span class="font-headline text-sm group-hover:text-primary transition-colors">Ford</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="w-5 h-5 bg-surface-container-high border-none text-primary-container rounded-sm focus:ring-offset-background" type="checkbox"/>
+<span class="font-headline text-sm group-hover:text-primary transition-colors">Porsche</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="w-5 h-5 bg-surface-container-high border-none text-primary-container rounded-sm focus:ring-offset-background" type="checkbox"/>
+<span class="font-headline text-sm group-hover:text-primary transition-colors">Ferrari</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="w-5 h-5 bg-surface-container-high border-none text-primary-container rounded-sm focus:ring-offset-background" type="checkbox"/>
+<span class="font-headline text-sm group-hover:text-primary transition-colors">Lamborghini</span>
+</label>
+</div>
+</div>
+</aside>
+<!-- Collection Grid -->
+<section class="flex-1" id="collection-grid">
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+<!-- Card 1 -->
+<article class="group bg-surface-container-low rounded-xl overflow-hidden transition-all duration-300 hover:translate-y-[-4px]">
+<div class="relative aspect-[4/3] overflow-hidden bg-surface-container-lowest">
+<img alt="1967 Ford Mustang GT" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="studio photograph of a vintage red 1967 Ford Mustang GT scale model on a clean dark reflective surface with cinematic highlights" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCR8cdG4oFA0L-K-wB7m6T2-OKG55Jcn1YPsrlt_YyO3TmlNVui9ddJV8koZetj4Cdn2h4g4z2uaIvNkfDYRst81uk2dVG8k_DR8kqMqahYqgeR0Ee8r3cNxymICAgNK4XlmBL7VLvJubyt6CdqKV8O6ghyCW27_AWw7Oc1RoaNxL3PyIHlapcv9V2HuSGIeZon4EjdFv9sa6tsPWwuQCxhOhCXlP2MJoTP-WKB-y2baPuH0hj8LsBCWIu-Qs0DncTVrMSh8tCFeCs"/>
+<div class="absolute top-4 right-4 flex gap-2">
+<button class="p-2 bg-background/60 backdrop-blur-md rounded-full text-on-surface hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="favorite" style="font-variation-settings: 'FILL' 0;">favorite</span>
+</button>
+</div>
+<div class="absolute bottom-4 left-4">
+<span class="bg-surface-bright text-on-surface font-label text-[10px] px-2 py-1 tracking-wider">DIE-CAST</span>
+</div>
+</div>
+<div class="p-6">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="font-headline text-xl font-bold group-hover:text-primary transition-colors">Ford Mustang GT</h3>
+<p class="text-on-surface/60 text-sm font-label uppercase tracking-widest">1967 • AUTOart</p>
+</div>
+<span class="font-headline font-bold text-lg text-primary">1:18</span>
+</div>
+<div class="pt-4 flex items-center justify-between border-t border-outline-variant/15">
+<button class="text-[10px] font-label uppercase tracking-[0.15em] text-on-surface/40 hover:text-error transition-colors flex items-center gap-1 group/btn">
+<span class="material-symbols-outlined text-sm" data-icon="delete">delete</span>
+                                    Remove
+                                </button>
+<span class="material-symbols-outlined text-on-surface/20" data-icon="verified">verified</span>
+</div>
+</div>
+</article>
+<!-- Card 2 -->
+<article class="group bg-surface-container-low rounded-xl overflow-hidden transition-all duration-300 hover:translate-y-[-4px]">
+<div class="relative aspect-[4/3] overflow-hidden bg-surface-container-lowest">
+<img alt="2022 Porsche 911 GT3" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="ultra detailed photograph of a silver Porsche 911 GT3 scale model in a modern museum display setting with soft ambient lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsyaT9nUD71dH4BSf0cj5J8W6G1rrmlzwB9O64MjTnXGRseNSrKIPRynHs2bm1ybmRJXqs9tCinOmCRnh4GUjVUD1914Pgovy_Tz4wTfIu0EAZZvKxSAlzPyY1Au-c8P58wM6jiePC8RFCCs5CFqaMfWDFFC9Y3IXTIVnz5UH1pELwuoOMkeVT3u-DZAUTYGwWZTj48UVB4Ouen-9UwFObvf2XoXyLR-1-EoWv2KtxAGEF2Y40EdrB4-tUVIe5b2hgzVIXwwvvIRU"/>
+<div class="absolute top-4 right-4 flex gap-2">
+<button class="p-2 bg-background/60 backdrop-blur-md rounded-full text-primary">
+<span class="material-symbols-outlined text-lg" data-icon="favorite" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</button>
+</div>
+<div class="absolute bottom-4 left-4">
+<span class="bg-surface-bright text-on-surface font-label text-[10px] px-2 py-1 tracking-wider">RESIN</span>
+</div>
+</div>
+<div class="p-6">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="font-headline text-xl font-bold group-hover:text-primary transition-colors">Porsche 911 GT3</h3>
+<p class="text-on-surface/60 text-sm font-label uppercase tracking-widest">2022 • Spark</p>
+</div>
+<span class="font-headline font-bold text-lg text-primary">1:43</span>
+</div>
+<div class="pt-4 flex items-center justify-between border-t border-outline-variant/15">
+<button class="text-[10px] font-label uppercase tracking-[0.15em] text-on-surface/40 hover:text-error transition-colors flex items-center gap-1 group/btn">
+<span class="material-symbols-outlined text-sm" data-icon="delete">delete</span>
+                                    Remove
+                                </button>
+<span class="material-symbols-outlined text-on-surface/20" data-icon="verified">verified</span>
+</div>
+</div>
+</article>
+<!-- Card 3 -->
+<article class="group bg-surface-container-low rounded-xl overflow-hidden transition-all duration-300 hover:translate-y-[-4px]">
+<div class="relative aspect-[4/3] overflow-hidden bg-surface-container-lowest">
+<img alt="Ferrari F40" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="studio macro shot of a Ferrari F40 engine detail and red bodywork, shallow depth of field, dramatic automotive lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKtzzHuhaTuR_BtYJyQP1bhJ4olqeCSviAMySIy2k5j1d7e1bIVwgn2eBw_vIyU3R_MOXvlUHt0BLnEJBn4NCHjuVKhDRG3f7Gz3TkdlLjv_9w4CDb82Jds9fcgl8ythiAYTQbtDQRYtK-gt2147KQ7XPNoTVVUCkfX8Hjrwv_AcpUAcMNKSP_abtSaVtlGnleL6sB1-VraTvyarP90ZeFQpthVBNSJxtzLcucKM0wdJ7-yGikyejVd5m9HBHWv3182xK6sPE_QLA"/>
+<div class="absolute top-4 right-4 flex gap-2">
+<button class="p-2 bg-background/60 backdrop-blur-md rounded-full text-on-surface hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="favorite" style="font-variation-settings: 'FILL' 0;">favorite</span>
+</button>
+</div>
+<div class="absolute bottom-4 left-4">
+<span class="bg-surface-bright text-on-surface font-label text-[10px] px-2 py-1 tracking-wider">COMPOSITE</span>
+</div>
+</div>
+<div class="p-6">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="font-headline text-xl font-bold group-hover:text-primary transition-colors">Ferrari F40</h3>
+<p class="text-on-surface/60 text-sm font-label uppercase tracking-widest">1987 • Kyosho</p>
+</div>
+<span class="font-headline font-bold text-lg text-primary">1:12</span>
+</div>
+<div class="pt-4 flex items-center justify-between border-t border-outline-variant/15">
+<button class="text-[10px] font-label uppercase tracking-[0.15em] text-on-surface/40 hover:text-error transition-colors flex items-center gap-1 group/btn">
+<span class="material-symbols-outlined text-sm" data-icon="delete">delete</span>
+                                    Remove
+                                </button>
+<span class="material-symbols-outlined text-on-surface/20" data-icon="verified">verified</span>
+</div>
+</div>
+</article>
+<!-- Card 4 -->
+<article class="group bg-surface-container-low rounded-xl overflow-hidden transition-all duration-300 hover:translate-y-[-4px]">
+<div class="relative aspect-[4/3] overflow-hidden bg-surface-container-lowest">
+<img alt="Lamborghini Countach" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="white Lamborghini Countach scale model with scissor doors open, studio lighting on black background, crisp edges" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPJ-o_lDNvdfita_Vt9CQyM5ZYagHA_bbOiG_2TMtwFNicPFK1AmToaa3mI8W_Bg4nuF7QmWtb_sGPlnzIXYvCj4V1bqjcgwVzjPHtnOmj8ZND_M0daiDqrEunfae5nF8KVgpoUhdnliZPpTyKoDLRoziqZIz_t6l3610GGtNn42EOJfYsOq1sO_v93nwEICxBn4k6taRVUVpg0ocU6x_4KldcGZPN96-vO3US2goOfEXoikOu1FxuHH6ZZzz2snt3ZpX0lrul4bc"/>
+<div class="absolute top-4 right-4 flex gap-2">
+<button class="p-2 bg-background/60 backdrop-blur-md rounded-full text-on-surface hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="favorite" style="font-variation-settings: 'FILL' 0;">favorite</span>
+</button>
+</div>
+<div class="absolute bottom-4 left-4">
+<span class="bg-surface-bright text-on-surface font-label text-[10px] px-2 py-1 tracking-wider">DIE-CAST</span>
+</div>
+</div>
+<div class="p-6">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="font-headline text-xl font-bold group-hover:text-primary transition-colors">Lamborghini Countach</h3>
+<p class="text-on-surface/60 text-sm font-label uppercase tracking-widest">1974 • BBR</p>
+</div>
+<span class="font-headline font-bold text-lg text-primary">1:18</span>
+</div>
+<div class="pt-4 flex items-center justify-between border-t border-outline-variant/15">
+<button class="text-[10px] font-label uppercase tracking-[0.15em] text-on-surface/40 hover:text-error transition-colors flex items-center gap-1 group/btn">
+<span class="material-symbols-outlined text-sm" data-icon="delete">delete</span>
+                                    Remove
+                                </button>
+<span class="material-symbols-outlined text-on-surface/20" data-icon="verified">verified</span>
+</div>
+</div>
+</article>
+</div>
+</section>
+</div>
+</main>
+<!-- Modal (Hidden by default, shown for structure) -->
+<div class="fixed inset-0 z-[100] flex items-center justify-center p-6 hidden" id="add-modal">
+<div class="absolute inset-0 bg-background/80 backdrop-blur-sm"></div>
+<div class="relative w-full max-w-xl bg-surface-container-high p-8 md:p-12 shadow-2xl">
+<div class="flex justify-between items-start mb-10">
+<div>
+<h2 class="text-3xl font-headline font-bold tracking-tight text-on-surface">New Acquisition</h2>
+<p class="text-on-surface/60 font-body text-sm mt-1">Register a new masterpiece to your curated collection.</p>
+</div>
+<button class="p-2 hover:bg-surface-bright rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</div>
+<form class="space-y-8">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="space-y-2">
+<label class="font-label text-[10px] uppercase tracking-widest text-on-surface/40">Model Name</label>
+<input class="w-full bg-surface-container-lowest border-none border-b-2 border-outline-variant/15 py-3 px-0 focus:border-primary focus:ring-0 placeholder:text-on-surface/20" placeholder="e.g. Shelby GT500" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="font-label text-[10px] uppercase tracking-widest text-on-surface/40">Year</label>
+<input class="w-full bg-surface-container-lowest border-none border-b-2 border-outline-variant/15 py-3 px-0 focus:border-primary focus:ring-0 placeholder:text-on-surface/20" placeholder="e.g. 1967" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="font-label text-[10px] uppercase tracking-widest text-on-surface/40">Manufacturer</label>
+<input class="w-full bg-surface-container-lowest border-none border-b-2 border-outline-variant/15 py-3 px-0 focus:border-primary focus:ring-0 placeholder:text-on-surface/20" placeholder="e.g. AUTOart" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="font-label text-[10px] uppercase tracking-widest text-on-surface/40">Series</label>
+<select class="w-full bg-surface-container-lowest border-none border-b-2 border-outline-variant/15 py-3 px-0 focus:border-primary focus:ring-0 appearance-none">
+<option>Die-Cast</option>
+<option>Resin</option>
+<option>Composite</option>
+</select>
+</div>
+</div>
+<div class="pt-6 flex justify-end gap-4">
+<button class="px-8 py-3 font-headline text-sm font-bold text-on-surface/60 hover:text-on-surface transition-colors" type="button">CANCEL</button>
+<button class="px-10 py-3 bg-primary-container text-on-primary-container font-headline font-bold text-sm tracking-wide hover:brightness-110" type="submit">CONFIRM ENTRY</button>
+</div>
+</form>
+</div>
+</div>
+<!-- Footer -->
+<footer class="bg-[#121416]">
+<div class="w-full border-t border-[#5e3f3a]/15 flex flex-col md:flex-row justify-between items-center px-12 py-12 gap-8 max-w-[1440px] mx-auto">
+<div class="text-lg font-black text-[#e2e2e5] font-headline">THE DIGITAL CURATOR</div>
+<div class="flex flex-wrap justify-center gap-10">
+<a class="font-['Space_Grotesk'] text-[10px] uppercase tracking-[0.1em] text-[#e2e2e5]/60 hover:text-[#D40000] transition-all" href="#">Terms of Service</a>
+<a class="font-['Space_Grotesk'] text-[10px] uppercase tracking-[0.1em] text-[#e2e2e5]/60 hover:text-[#D40000] transition-all" href="#">Privacy Policy</a>
+<a class="font-['Space_Grotesk'] text-[10px] uppercase tracking-[0.1em] text-[#e2e2e5]/60 hover:text-[#D40000] transition-all" href="#">Contact Support</a>
+<a class="font-['Space_Grotesk'] text-[10px] uppercase tracking-[0.1em] text-[#e2e2e5]/60 hover:text-[#D40000] transition-all" href="#">Archive</a>
+</div>
+<div class="font-['Space_Grotesk'] text-[10px] uppercase tracking-[0.1em] text-[#e2e2e5]/40">
+                © 2024 THE DIGITAL CURATOR. PRECISION ENGINEERED.
+            </div>
+</div>
+</footer>
+</body></html>
