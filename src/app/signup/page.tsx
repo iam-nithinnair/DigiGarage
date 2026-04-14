@@ -1,0 +1,89 @@
+import { signup } from '@/app/login/actions'
+import { KeyRound, Mail, X } from 'lucide-react'
+import Image from 'next/image'
+import Link from 'next/link'
+
+export default function SignUpPage() {
+  return (
+    <main className="min-h-screen flex flex-col md:flex-row bg-background">
+      {/* Asymmetric Left Side: Visual Pedestal */}
+      <section className="relative hidden md:flex overflow-hidden items-end p-12 lg:p-24 md:w-[60%]">
+        <div className="absolute inset-0 z-0">
+          <Image 
+            fill
+            alt="Close-up of a luxury die-cast model car headlamp" 
+            className="object-cover grayscale contrast-125 opacity-40" 
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMUuYzkNbX9C0OwNwHRSpGuN0LI5FjMCDH47r_XKo1Vi9qCqf_zj-3EsCP5CxmmDxB5U3Obdj2V4xrubgnUFGuChNVGwi1P9MJzwM22QLfbZXQ8v--lpEmoaajtqwlsheBit3NfnkdP7vRKJGGXy_IXzl6XUNbIcFxymfT5_w_BXzGTfxd5_OwRy-MgzaoUlhnr4wZO_B2gP3YIoX_eBsmQ91NrwOHS_AtHOa5rlpKt4oXUH7wLWWAORr27OyYctiROeWoclcg93c"
+          />
+          <div className="absolute inset-0 bg-gradient-to-tr from-background via-transparent to-transparent opacity-90"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-background to-transparent w-1/3"></div>
+        </div>
+        <div className="relative z-10 max-w-2xl">
+          <div className="inline-block bg-surface-bright px-3 py-1 mb-6">
+            <span className="font-label text-[10px] uppercase tracking-widest text-on-surface">Precision Standard</span>
+          </div>
+          <h1 className="font-headline text-5xl lg:text-7xl font-bold tracking-tighter leading-none mb-6 text-on-surface">
+            ENGINEERED FOR <br/><span className="text-primary">COLLECTORS.</span>
+          </h1>
+          <p className="font-body text-secondary max-w-md leading-relaxed text-lg">
+            Join the exclusive digital showroom for elite scale model curation. Document history, track rarity, and showcase your precision assets.
+          </p>
+        </div>
+      </section>
+
+      {/* Right Side: Focused Transactional Canvas */}
+      <section className="flex flex-col justify-center px-8 py-32 md:px-12 lg:px-20 bg-surface-container-lowest relative z-10 md:w-[40%]">
+        <div className="w-full mx-auto max-w-xl">
+          <header className="mb-12">
+            <h2 className="font-headline text-3xl font-bold mb-2 text-on-surface">Create Account</h2>
+            <p className="text-secondary-fixed-dim text-sm">Enter your credentials to begin your curation journey.</p>
+          </header>
+          
+          <form className="space-y-6">
+            {/* Email Address */}
+            <div className="group">
+              <label className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2 block group-focus-within:text-primary transition-colors" htmlFor="email">Email Address</label>
+              <input 
+                id="email" 
+                name="email" 
+                type="email" 
+                required
+                placeholder="curator@digital.com" 
+                className="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant/15 py-3 px-0 focus:ring-0 focus:border-primary text-on-surface placeholder:text-on-surface-variant/30 font-body transition-all outline-none" 
+              />
+            </div>
+
+            {/* Password */}
+            <div className="group">
+              <label className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2 block group-focus-within:text-primary transition-colors" htmlFor="password">Password</label>
+              <input 
+                id="password" 
+                name="password" 
+                type="password" 
+                required
+                placeholder="••••••••" 
+                className="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant/15 py-3 px-0 focus:ring-0 focus:border-primary text-on-surface placeholder:text-on-surface-variant/30 font-body transition-all outline-none" 
+              />
+            </div>
+
+            {/* Primary Action: Ignition Point */}
+            <button 
+              formAction={signup}
+              className="w-full bg-primary-container hover:bg-primary-container/80 text-on-primary-container font-headline font-bold py-5 rounded-sm tracking-widest uppercase text-sm transition-all duration-300 transform active:scale-[0.98] mt-4 shadow-2xl shadow-primary-container/20" 
+              type="submit"
+            >
+                Create Account
+            </button>
+          </form>
+
+          <footer className="mt-12 text-center">
+            <p className="text-on-surface-variant font-body text-sm">
+                Already have an account? 
+                <Link href="/login" className="text-on-surface font-bold hover:text-primary transition-colors ml-1">Sign In</Link>
+            </p>
+          </footer>
+        </div>
+      </section>
+    </main>
+  );
+}
