@@ -1,9 +1,37 @@
-import { login } from './actions'
+'use client';
+
 import { KeyRound, Mail, ArrowRight, X } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { useState } from 'react'
 
 export default function LoginPage() {
+  const router = useRouter()
+  const [errorText, setErrorText] = useState<string | null>(null)
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setErrorText(null)
+    const formData = new FormData(e.currentTarget)
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+
+    const supabase = createClient()
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (error) {
+      setErrorText('Could not authenticate user')
+    } else {
+      router.push('/')
+      router.refresh()
+    }
+  }
+
   return (
     <main className="flex-grow flex items-center justify-center relative overflow-hidden min-h-screen bg-background">
       {/* Background Hero Element */}
@@ -25,7 +53,7 @@ export default function LoginPage() {
             <p className="font-label text-[10px] uppercase tracking-[0.2em] text-on-surface-variant">Precision Access Required</p>
           </div>
           
-          <form className="space-y-8">
+          <form className="space-y-8" onSubmit={handleSubmit}>
             {/* Email Input */}
             <div className="group">
               <label className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant block mb-2 px-1" htmlFor="email">Email Terminal</label>
@@ -61,10 +89,11 @@ export default function LoginPage() {
               </div>
             </div>
             
+            {errorText && <p className="text-error font-body text-sm text-center">{errorText}</p>}
+
             {/* Primary Action */}
             <div className="pt-4">
               <button 
-                formAction={login}
                 className="w-full bg-primary-container text-on-primary-container font-headline font-bold uppercase tracking-widest py-4 px-6 rounded-sm hover:bg-primary transition-all duration-300 flex justify-center items-center gap-3 group" 
                 type="submit"
               >

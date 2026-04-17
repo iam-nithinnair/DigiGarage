@@ -1,9 +1,37 @@
-import { signup } from '@/app/login/actions'
+'use client';
+
 import { KeyRound, Mail, X } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { useState } from 'react'
 
 export default function SignUpPage() {
+  const router = useRouter()
+  const [errorText, setErrorText] = useState<string | null>(null)
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setErrorText(null)
+    const formData = new FormData(e.currentTarget)
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+
+    const supabase = createClient()
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+    })
+
+    if (error) {
+      setErrorText('Could not authenticate user')
+    } else {
+      router.push('/')
+      router.refresh()
+    }
+  }
+
   return (
     <main className="min-h-screen flex flex-col md:flex-row bg-background">
       {/* Asymmetric Left Side: Visual Pedestal */}
@@ -39,7 +67,7 @@ export default function SignUpPage() {
             <p className="text-secondary-fixed-dim text-sm">Enter your credentials to begin your curation journey.</p>
           </header>
           
-          <form className="space-y-6">
+          <form className="space-y-6" onSubmit={handleSubmit}>
             {/* Email Address */}
             <div className="group">
               <label className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2 block group-focus-within:text-primary transition-colors" htmlFor="email">Email Address</label>
@@ -65,10 +93,11 @@ export default function SignUpPage() {
                 className="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant/15 py-3 px-0 focus:ring-0 focus:border-primary text-on-surface placeholder:text-on-surface-variant/30 font-body transition-all outline-none" 
               />
             </div>
+            
+            {errorText && <p className="text-error font-body text-sm text-center">{errorText}</p>}
 
             {/* Primary Action: Ignition Point */}
             <button 
-              formAction={signup}
               className="w-full bg-primary-container hover:bg-primary-container/80 text-on-primary-container font-headline font-bold py-5 rounded-sm tracking-widest uppercase text-sm transition-all duration-300 transform active:scale-[0.98] mt-4 shadow-2xl shadow-primary-container/20" 
               type="submit"
             >

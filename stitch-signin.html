@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Sign In | The Digital Curator</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed-dim": "#ffb4a8",
+                        "inverse-on-surface": "#2f3133",
+                        "on-primary": "#690000",
+                        "surface-container-low": "#1a1c1e",
+                        "on-secondary": "#233143",
+                        "on-primary-container": "#ffe3de",
+                        "background": "#121416",
+                        "on-tertiary-fixed-variant": "#41474e",
+                        "surface-container-highest": "#333537",
+                        "outline": "#af8781",
+                        "on-tertiary": "#2b3137",
+                        "on-surface-variant": "#e8bcb5",
+                        "on-primary-fixed-variant": "#930000",
+                        "secondary-container": "#39485a",
+                        "surface-container": "#1e2022",
+                        "tertiary-container": "#636970",
+                        "outline-variant": "#5e3f3a",
+                        "tertiary": "#c1c7cf",
+                        "on-secondary-fixed": "#0d1c2d",
+                        "primary-container": "#d40000",
+                        "tertiary-fixed": "#dde3eb",
+                        "surface": "#121416",
+                        "on-tertiary-container": "#e3e9f1",
+                        "error-container": "#93000a",
+                        "on-surface": "#e2e2e5",
+                        "on-error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#c1c7cf",
+                        "primary": "#ffb4a8",
+                        "surface-variant": "#333537",
+                        "secondary-fixed": "#d4e4fa",
+                        "on-primary-fixed": "#410000",
+                        "on-background": "#e2e2e5",
+                        "inverse-primary": "#c00000",
+                        "error": "#ffb4ab",
+                        "surface-container-lowest": "#0c0e10",
+                        "surface-dim": "#121416",
+                        "secondary": "#b9c8de",
+                        "inverse-surface": "#e2e2e5",
+                        "secondary-fixed-dim": "#b9c8de",
+                        "primary-fixed": "#ffdad4",
+                        "on-error": "#690005",
+                        "on-secondary-container": "#a7b6cc",
+                        "on-tertiary-fixed": "#161c22",
+                        "surface-container-high": "#282a2c",
+                        "on-secondary-fixed-variant": "#39485a",
+                        "surface-tint": "#ffb4a8",
+                        "surface-bright": "#38393c"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Space Grotesk"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .tonal-transition {
+            background: linear-gradient(to bottom, rgba(18, 20, 22, 0.8), rgba(18, 20, 22, 0));
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-primary/30 min-h-screen flex flex-col">
+<!-- TopAppBar Shared Component -->
+<header class="fixed top-0 w-full z-50 bg-transparent backdrop-blur-xl flex justify-between items-center px-8 py-6 w-full">
+<div class="font-['Space_Grotesk'] tracking-tight text-xl font-bold uppercase tracking-[0.2em] text-zinc-100">
+            The Digital Curator
+        </div>
+<div class="flex items-center gap-6">
+<button class="text-zinc-400 hover:text-red-400 transition-colors duration-300">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</div>
+</header>
+<main class="flex-grow flex items-center justify-center relative overflow-hidden">
+<!-- Background Hero Element -->
+<div class="absolute inset-0 z-0">
+<img alt="Sleek detail of a classic sports car" class="w-full h-full object-cover opacity-40 mix-blend-luminosity" data-alt="extreme close-up of a vintage metallic red porsche tail light with elegant chrome accents and reflections under moody museum spotlights" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDppfkRoAsfgcg0D7syBeH8l0FyVDZi-r3PTr3p1FiOz_7MLCQfcWhE1vTpSs0_mJ_KrLIXxQRQJFcJuMogaeAiCt2yV7L00NT3EEfT7kNaux3QkjiUbFtq7FK3gBl3PP9RqRl06UNsgrWUkHJw-2Wm5jaW7-pUoVJfih7fAuuVRni-SZbsRKAyA8S7rCtFwDrFX3617zuLteW4QKjmIytIUmMpEi92OGWGjZabzOfDkE_Cn8mQe1OXfKBYEEsPpHqHziIxkvQoe1w"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent"></div>
+</div>
+<!-- Auth Canvas -->
+<div class="relative z-10 w-full max-w-md px-6 lg:px-0">
+<div class="bg-surface-container/60 backdrop-blur-2xl p-10 rounded-xl shadow-2xl border-none">
+<div class="mb-10 text-center">
+<h1 class="font-headline text-3xl font-bold tracking-tight text-on-surface mb-2">Welcome Back</h1>
+<p class="font-label text-[10px] uppercase tracking-[0.2em] text-on-surface-variant">Precision Access Required</p>
+</div>
+<form class="space-y-8">
+<!-- Email Input -->
+<div class="group">
+<label class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant block mb-2 px-1" for="email">Email Terminal</label>
+<input class="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant/15 text-on-surface py-3 px-4 focus:ring-0 focus:border-primary transition-all duration-300 placeholder:text-on-surface-variant/30 font-body text-sm" id="email" placeholder="curator@precision.com" type="email"/>
+</div>
+<!-- Password Input -->
+<div class="group">
+<div class="flex justify-between items-end mb-2 px-1">
+<label class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant block" for="password">Access Key</label>
+<a class="font-label text-[10px] uppercase tracking-widest text-primary-fixed-dim hover:text-primary transition-colors" href="#">Forgot Password?</a>
+</div>
+<input class="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant/15 text-on-surface py-3 px-4 focus:ring-0 focus:border-primary transition-all duration-300 placeholder:text-on-surface-variant/30 font-body text-sm" id="password" placeholder="••••••••" type="password"/>
+</div>
+<!-- Primary Action -->
+<div class="pt-4">
+<button class="w-full bg-primary-container text-on-primary-container font-headline font-bold uppercase tracking-widest py-4 px-6 rounded-sm hover:bg-primary transition-all duration-300 flex justify-center items-center gap-3 group" type="submit">
+<span>Sign In</span>
+<span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</form>
+<!-- Footer Link -->
+<div class="mt-12 text-center">
+<p class="font-body text-sm text-on-surface-variant">
+                        Don't have an account? 
+                        <a class="text-on-surface font-semibold hover:text-primary transition-colors underline underline-offset-4 decoration-outline-variant/30" href="#">Sign Up</a>
+</p>
+</div>
+</div>
+<!-- Technical Chips/Specs -->
+<div class="mt-8 flex justify-center gap-4 opacity-50">
+<span class="bg-surface-bright text-on-surface font-label text-[9px] px-3 py-1 uppercase tracking-tighter">Encrypted-TLS 1.3</span>
+<span class="bg-surface-bright text-on-surface font-label text-[9px] px-3 py-1 uppercase tracking-tighter">Auth V4.02</span>
+</div>
+</div>
+</main>
+<!-- Footer Shared Component -->
+<footer class="w-full py-12 bg-zinc-950/50 flex flex-col items-center gap-4 w-full">
+<div class="flex gap-8">
+<a class="font-['Space_Grotesk'] text-[10px] uppercase tracking-widest text-zinc-500 hover:text-zinc-200 transition-colors" href="#">Privacy</a>
+<a class="font-['Space_Grotesk'] text-[10px] uppercase tracking-widest text-zinc-500 hover:text-zinc-200 transition-colors" href="#">Terms</a>
+<a class="font-['Space_Grotesk'] text-[10px] uppercase tracking-widest text-zinc-500 hover:text-zinc-200 transition-colors" href="#">Support</a>
+</div>
+<div class="font-['Space_Grotesk'] text-[10px] uppercase tracking-widest text-zinc-500">
+            © 2024 THE DIGITAL CURATOR. PRECISION ENGINEERED.
+        </div>
+</footer>
+</body></html>
