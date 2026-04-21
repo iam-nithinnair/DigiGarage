@@ -2,10 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
+import { useStore } from "@/store/useStore";
 import { Home, LayoutGrid, List, Heart, Search, User, Terminal } from "lucide-react";
 
 export default function TopNavBar() {
   const pathname = usePathname();
+  const { isLoaded, fetchData } = useStore();
+
+  useEffect(() => {
+    if (!isLoaded) {
+      fetchData();
+    }
+  }, [isLoaded, fetchData]);
 
   const getLinkClass = (path: string) => {
     const isActive = pathname === path;
