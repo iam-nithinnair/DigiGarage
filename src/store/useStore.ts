@@ -34,6 +34,7 @@ interface CollectionState {
   addISOModel: (model: Omit<ISOModel, 'id' | 'user_id'>) => Promise<void>;
   removeISOModel: (id: string) => Promise<void>;
   signOut: () => Promise<void>;
+  resendConfirmationEmail: (email: string) => Promise<{ error: any }>;
 }
 
 export const useStore = create<CollectionState>((set, get) => {
@@ -191,6 +192,14 @@ export const useStore = create<CollectionState>((set, get) => {
       const supabase = getSupabase();
       await supabase.auth.signOut();
       set({ models: [], isoModels: [], user: null });
+    },
+    resendConfirmationEmail: async (email: string) => {
+      const supabase = getSupabase();
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+      });
+      return { error };
     }
   };
 });

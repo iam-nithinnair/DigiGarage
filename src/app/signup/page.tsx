@@ -1,6 +1,6 @@
 'use client';
 
-import { KeyRound, Mail, X, Eye } from 'lucide-react'
+import { KeyRound, Mail, X, Eye, CheckCircle } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -10,10 +10,14 @@ import { useState } from 'react'
 export default function SignUpPage() {
   const router = useRouter()
   const [errorText, setErrorText] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setErrorText(null)
+    setLoading(true)
+
     const formData = new FormData(e.currentTarget)
     const email = formData.get('email') as string
     const password = formData.get('password') as string
@@ -21,6 +25,7 @@ export default function SignUpPage() {
 
     if (password !== confirmPassword) {
       setErrorText('Passwords do not match')
+      setLoading(false)
       return
     }
 
@@ -30,12 +35,34 @@ export default function SignUpPage() {
       password,
     })
 
+    setLoading(false)
+
     if (error) {
       setErrorText(error.message)
     } else {
-      router.push('/')
-      router.refresh()
+      setSuccess(true)
     }
+  }
+
+  if (success) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-background p-6">
+        <div className="bg-surface-container/60 backdrop-blur-2xl p-12 rounded-xl shadow-2xl max-w-md w-full text-center border border-white/5">
+          <div className="flex justify-center mb-6">
+            <div className="bg-primary/10 p-4 rounded-full">
+              <CheckCircle size={48} className="text-primary" />
+            </div>
+          </div>
+          <h2 className="font-headline text-3xl font-bold mb-4">Check Your Inbox</h2>
+          <p className="text-on-surface-variant font-body mb-8">
+            We've sent a confirmation link to your email. Please verify your account to start your curation journey.
+          </p>
+          <Link href="/login" className="inline-block bg-primary-container text-on-primary-container font-headline font-bold py-4 px-8 rounded-sm tracking-widest uppercase text-sm hover:bg-primary transition-all">
+            Return to Sign In
+          </Link>
+        </div>
+      </main>
+    );
   }
 
   return (
@@ -145,10 +172,11 @@ export default function SignUpPage() {
 
             {/* Primary Action: Ignition Point */}
             <button 
-              className="w-full bg-primary-container hover:bg-primary-container/80 text-on-primary-container font-headline font-bold py-5 rounded-sm tracking-widest uppercase text-sm transition-all duration-300 transform active:scale-[0.98] mt-4 shadow-2xl shadow-primary-container/20" 
+              disabled={loading}
+              className="w-full bg-primary-container hover:bg-primary-container/80 text-on-primary-container font-headline font-bold py-5 rounded-sm tracking-widest uppercase text-sm transition-all duration-300 transform active:scale-[0.98] mt-4 shadow-2xl shadow-primary-container/20 disabled:opacity-50" 
               type="submit"
             >
-                Create Account
+                {loading ? 'Creating Account...' : 'Create Account'}
             </button>
           </form>
 

@@ -1,36 +1,62 @@
 'use client';
 
-import { ArrowRight, Mail, KeyRound } from 'lucide-react'
+import { ArrowRight, Mail, KeyRound, RefreshCw } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
+import { useStore } from '@/store/useStore'
 
 export default function LoginPage() {
   const router = useRouter()
   const [errorText, setErrorText] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [email, setEmail] = useState('')
+  const [resendSuccess, setResendEmailSuccess] = useState(false)
+  const resendConfirmationEmail = useStore(state => state.resendConfirmationEmail)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setErrorText(null)
+    setResendEmailSuccess(false)
+    setLoading(true)
+
     const formData = new FormData(e.currentTarget)
-    const email = formData.get('email') as string
+    const emailValue = formData.get('email') as string
     const password = formData.get('password') as string
 
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithPassword({
-      email,
+      email: emailValue,
       password,
     })
 
+    setLoading(false)
+
     if (error) {
       setErrorText(error.message)
+      setEmail(emailValue)
     } else {
       router.push('/')
       router.refresh()
     }
   }
+
+  const handleResend = async () => {
+    if (!email) return;
+    setLoading(true)
+    const { error } = await resendConfirmationEmail(email)
+    setLoading(false)
+    if (error) {
+      setErrorText(error.message)
+    } else {
+      setResendEmailSuccess(true)
+      setErrorText(null)
+    }
+  }
+
+  const isEmailUnconfirmed = errorText?.toLowerCase().includes('email not confirmed');
 
   return (
     <main className="flex-grow flex items-center justify-center relative overflow-hidden min-h-screen bg-background">
@@ -62,6 +88,7 @@ export default function LoginPage() {
                 name="email" 
                 type="email" 
                 required
+                defaultValue={email}
                 placeholder="curator@precision.com" 
                 className="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant/15 text-on-surface py-3 px-4 focus:ring-0 focus:border-primary transition-all duration-300 placeholder:text-on-surface-variant/30 font-body text-sm outline-none" 
               />
@@ -83,16 +110,36 @@ export default function LoginPage() {
               />
             </div>
             
-            {errorText && <p className="text-error font-body text-sm text-center">{errorText}</p>}
+            {errorText && (
+              <div className="flex flex-col items-center gap-4">
+                <p className="text-error font-body text-sm text-center">{errorText}</p>
+                {isEmailUnconfirmed && (
+                  <button 
+                    type="button"
+                    onClick={handleResend}
+                    disabled={loading}
+                    className="flex items-center gap-2 text-xs font-headline font-bold text-primary uppercase tracking-widest hover:brightness-110 disabled:opacity-50"
+                  >
+                    <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+                    Resend Confirmation Email
+                  </button>
+                )}
+              </div>
+            )}
+
+            {resendSuccess && (
+              <p className="text-primary font-body text-sm text-center">Confirmation email sent! Please check your inbox.</p>
+            )}
 
             {/* Primary Action */}
             <div className="pt-4">
               <button 
-                className="w-full bg-primary-container text-on-primary-container font-headline font-bold uppercase tracking-widest py-4 px-6 rounded-sm hover:bg-primary transition-all duration-300 flex justify-center items-center gap-3 group" 
+                disabled={loading}
+                className="w-full bg-primary-container text-on-primary-container font-headline font-bold uppercase tracking-widest py-4 px-6 rounded-sm hover:bg-primary transition-all duration-300 flex justify-center items-center gap-3 group disabled:opacity-50" 
                 type="submit"
               >
-                <span>Sign In</span>
-                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                <span>{loading ? 'Processing...' : 'Sign In'}</span>
+                {!loading && <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />}
               </button>
             </div>
           </form>
