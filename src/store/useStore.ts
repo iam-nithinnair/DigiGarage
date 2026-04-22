@@ -45,6 +45,15 @@ export const useStore = create<CollectionState>((set, get) => {
     user: null,
     isLoaded: false,
     fetchData: async () => {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+      if (!url || !key) {
+        console.warn("Supabase credentials missing. Skipping data fetch.");
+        set({ isLoaded: true });
+        return;
+      }
+
       const supabase = getSupabase();
       try {
         const { data: { user } } = await supabase.auth.getUser();
