@@ -98,34 +98,42 @@ export const useStore = create<CollectionState>((set, get) => {
     },
     addModel: async (model) => {
       const { user } = get();
-      if (!user) return;
+      if (!user) {
+        console.error("Cannot add model: No user logged in.");
+        return;
+      }
 
       const supabase = getSupabase();
       try {
-        const newModel = { 
+        const newRecord = { 
           ...model, 
           user_id: user.id,
           isFavorite: false 
         };
-        const { data, error } = await supabase.from('models').insert([newModel]).select();
         
-        if (!error && data) {
+        console.log("Attempting to insert model:", newRecord);
+        const { data, error } = await supabase.from('models').insert([newRecord]).select();
+        
+        if (error) {
+          console.error("Supabase error adding model:", error);
+        } else if (data && data.length > 0) {
+          console.log("Model added successfully:", data[0]);
           set((state) => ({ models: [...state.models, data[0]] }));
         } else {
-          console.error("Failed to add model to Supabase:", error);
+          console.warn("Model inserted but no data returned. Check RLS policies.");
         }
       } catch (e) {
-        console.error(e);
+        console.error("Unexpected error in addModel:", e);
       }
     },
     removeModel: async (id) => {
       const supabase = getSupabase();
       try {
         const { error } = await supabase.from('models').delete().eq('id', id);
-        if (!error) {
-          set((state) => ({ models: state.models.filter(m => m.id !== id) }));
+        if (error) {
+          console.error("Failed to remove model:", error);
         } else {
-          console.error("Failed to remove model from Supabase:", error);
+          set((state) => ({ models: state.models.filter(m => m.id !== id) }));
         }
       } catch (e) {
         console.error(e);
@@ -150,6 +158,7 @@ export const useStore = create<CollectionState>((set, get) => {
       try {
         const { error } = await supabase.from('models').update({ isFavorite: newFavState }).eq('id', id);
         if (error) {
+          console.error("Error toggling favorite:", error);
           set((state) => ({
             models: state.models.map(m => m.id === id ? { ...m, isFavorite: !newFavState } : m)
           }));
@@ -160,19 +169,27 @@ export const useStore = create<CollectionState>((set, get) => {
     },
     addISOModel: async (model) => {
       const { user } = get();
-      if (!user) return;
+      if (!user) {
+        console.error("Cannot add ISO: No user logged in.");
+        return;
+      }
 
       const supabase = getSupabase();
       try {
-        const newModel = { ...model, user_id: user.id };
-        const { data, error } = await supabase.from('iso_models').insert([newModel]).select();
-        if (!error && data) {
+        const newRecord = { ...model, user_id: user.id };
+        console.log("Attempting to insert ISO model:", newRecord);
+        const { data, error } = await supabase.from('iso_models').insert([newRecord]).select();
+        
+        if (error) {
+          console.error("Supabase error adding ISO model:", error);
+        } else if (data && data.length > 0) {
+          console.log("ISO model added successfully:", data[0]);
           set((state) => ({ isoModels: [...state.isoModels, data[0]] }));
         } else {
-          console.error("Failed to add ISO model to Supabase:", error);
+          console.warn("ISO model inserted but no data returned. Check RLS policies.");
         }
       } catch (e) {
-        console.error(e);
+        console.error("Unexpected error in addISOModel:", e);
       }
     },
     removeISOModel: async (id) => {
