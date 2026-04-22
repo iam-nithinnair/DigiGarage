@@ -1,6 +1,6 @@
 'use client';
 
-import { KeyRound, Mail, ArrowRight, X } from 'lucide-react'
+import { ArrowRight, Mail, KeyRound } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -25,7 +25,7 @@ export default function LoginPage() {
     })
 
     if (error) {
-      setErrorText('Could not authenticate user')
+      setErrorText(error.message)
     } else {
       router.push('/')
       router.refresh()
@@ -57,17 +57,14 @@ export default function LoginPage() {
             {/* Email Input */}
             <div className="group">
               <label className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant block mb-2 px-1" htmlFor="email">Email Terminal</label>
-              <div className="relative">
-                <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/40 group-focus-within:text-primary transition-colors" />
-                <input 
-                  id="email" 
-                  name="email" 
-                  type="email" 
-                  required
-                  placeholder="curator@precision.com" 
-                  className="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant/15 text-on-surface py-3 px-12 focus:ring-0 focus:border-primary transition-all duration-300 placeholder:text-on-surface-variant/30 font-body text-sm outline-none" 
-                />
-              </div>
+              <input 
+                id="email" 
+                name="email" 
+                type="email" 
+                required
+                placeholder="curator@precision.com" 
+                className="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant/15 text-on-surface py-3 px-4 focus:ring-0 focus:border-primary transition-all duration-300 placeholder:text-on-surface-variant/30 font-body text-sm outline-none" 
+              />
             </div>
             
             {/* Password Input */}
@@ -76,17 +73,14 @@ export default function LoginPage() {
                 <label className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant block" htmlFor="password">Access Key</label>
                 <Link href="#" className="font-label text-[10px] uppercase tracking-widest text-primary-fixed-dim hover:text-primary transition-colors">Forgot Password?</Link>
               </div>
-              <div className="relative">
-                <KeyRound size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/40 group-focus-within:text-primary transition-colors" />
-                <input 
-                  id="password" 
-                  name="password" 
-                  type="password" 
-                  required
-                  placeholder="••••••••" 
-                  className="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant/15 text-on-surface py-3 px-12 focus:ring-0 focus:border-primary transition-all duration-300 placeholder:text-on-surface-variant/30 font-body text-sm outline-none" 
-                />
-              </div>
+              <input 
+                id="password" 
+                name="password" 
+                type="password" 
+                required
+                placeholder="••••••••" 
+                className="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant/15 text-on-surface py-3 px-4 focus:ring-0 focus:border-primary transition-all duration-300 placeholder:text-on-surface-variant/30 font-body text-sm outline-none" 
+              />
             </div>
             
             {errorText && <p className="text-error font-body text-sm text-center">{errorText}</p>}
@@ -114,8 +108,8 @@ export default function LoginPage() {
         
         {/* Technical Chips/Specs */}
         <div className="mt-8 flex justify-center gap-4 opacity-50">
-          <span className="bg-surface-bright text-on-surface font-label text-[9px] px-3 py-1 uppercase tracking-tighter">Encrypted-TLS 1.3</span>
-          <span className="bg-surface-bright text-on-surface font-label text-[9px] px-3 py-1 uppercase tracking-tighter">Auth V4.02</span>
+          <span className="bg-surface-bright text-on-surface font-label text-[9px] px-3 py-1 uppercase tracking-tighter text-on-surface">Encrypted-TLS 1.3</span>
+          <span className="bg-surface-bright text-on-surface font-label text-[9px] px-3 py-1 uppercase tracking-tighter text-on-surface">Auth V4.02</span>
         </div>
       </div>
     </main>

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { createClient } from '@/lib/supabase/client';
+import { User } from '@supabase/supabase-js';
 
 export interface Model {
   id: string;
@@ -10,6 +11,7 @@ export interface Model {
   scale: string;
   isFavorite: boolean;
   image: string;
+  user_id: string;
 }
 
 export interface ISOModel {
@@ -17,33 +19,44 @@ export interface ISOModel {
   name: string;
   targetPrice: string;
   rarity: string;
+  user_id: string;
 }
 
 interface CollectionState {
   models: Model[];
   isoModels: ISOModel[];
+  user: User | null;
   isLoaded: boolean;
   fetchData: () => Promise<void>;
-  addModel: (model: Omit<Model, 'id' | 'isFavorite'>) => Promise<void>;
+  addModel: (model: Omit<Model, 'id' | 'isFavorite' | 'user_id'>) => Promise<void>;
   removeModel: (id: string) => Promise<void>;
   toggleFavorite: (id: string) => Promise<void>;
-  addISOModel: (model: Omit<ISOModel, 'id'>) => Promise<void>;
+  addISOModel: (model: Omit<ISOModel, 'id' | 'user_id'>) => Promise<void>;
   removeISOModel: (id: string) => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
-export const useStore = create<CollectionState>((set) => {
+export const useStore = create<CollectionState>((set, get) => {
   const getSupabase = () => createClient();
 
   return {
     models: [],
     isoModels: [],
+    user: null,
     isLoaded: false,
     fetchData: async () => {
       const supabase = getSupabase();
       try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          set({ models: [], isoModels: [], user: null, isLoaded: true });
+          return;
+        }
+
         const [modelsRes, isoModelsRes] = await Promise.all([
-          supabase.from('models').select('*'),
-          supabase.from('iso_models').select('*')
+          supabase.from('models').select('*').eq('user_id', user.id),
+          supabase.from('iso_models').select('*').eq('user_id', user.id)
         ]);
         
         let loadedModels = [];
@@ -52,32 +65,38 @@ export const useStore = create<CollectionState>((set) => {
         if (!modelsRes.error && modelsRes.data) {
            loadedModels = modelsRes.data;
         } else {
-           console.warn("Could not load collection models. Does the table exist?", modelsRes.error);
+           console.warn("Could not load collection models.", modelsRes.error);
         }
 
         if (!isoModelsRes.error && isoModelsRes.data) {
            loadedIsoModels = isoModelsRes.data;
         } else {
-           console.warn("Could not load ISO models. Does the table exist?", isoModelsRes.error);
+           console.warn("Could not load ISO models.", isoModelsRes.error);
         }
 
         set({ 
             models: loadedModels, 
             isoModels: loadedIsoModels, 
+            user: user,
             isLoaded: true 
         });
 
       } catch (error) {
-        console.error("Error connecting to Supabase during initialization:", error);
+        console.error("Error connecting to Supabase:", error);
         set({ isLoaded: true });
       }
     },
     addModel: async (model) => {
+      const { user } = get();
+      if (!user) return;
+
       const supabase = getSupabase();
       try {
-        // We use Date.now string just to keep ID creation stable out of the box, 
-        // though typically you'd omit 'id' entirely and let Postgres generate the UUID default.
-        const newModel = { ...model, id: Date.now().toString(), isFavorite: false };
+        const newModel = { 
+          ...model, 
+          user_id: user.id,
+          isFavorite: false 
+        };
         const { data, error } = await supabase.from('models').insert([newModel]).select();
         
         if (!error && data) {
@@ -106,7 +125,7 @@ export const useStore = create<CollectionState>((set) => {
       const supabase = getSupabase();
       let newFavState = false;
       
-      // Optmistic Update for immediate UI snap
+      // Optmistic Update
       set((state) => {
         const newModels = state.models.map(m => {
           if (m.id === id) {
@@ -118,11 +137,9 @@ export const useStore = create<CollectionState>((set) => {
         return { models: newModels };
       });
 
-      // Background write
       try {
         const { error } = await supabase.from('models').update({ isFavorite: newFavState }).eq('id', id);
         if (error) {
-          console.error("Failed to persist favorite toggle in Supabase:", error);
           set((state) => ({
             models: state.models.map(m => m.id === id ? { ...m, isFavorite: !newFavState } : m)
           }));
@@ -132,9 +149,12 @@ export const useStore = create<CollectionState>((set) => {
       }
     },
     addISOModel: async (model) => {
+      const { user } = get();
+      if (!user) return;
+
       const supabase = getSupabase();
       try {
-        const newModel = { ...model, id: Date.now().toString() };
+        const newModel = { ...model, user_id: user.id };
         const { data, error } = await supabase.from('iso_models').insert([newModel]).select();
         if (!error && data) {
           set((state) => ({ isoModels: [...state.isoModels, data[0]] }));
@@ -157,6 +177,11 @@ export const useStore = create<CollectionState>((set) => {
       } catch (e) {
         console.error(e);
       }
+    },
+    signOut: async () => {
+      const supabase = getSupabase();
+      await supabase.auth.signOut();
+      set({ models: [], isoModels: [], user: null });
     }
   };
 });

@@ -1,10 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Terminal, Wrench } from "lucide-react";
+import { ArrowRight, Terminal, Settings, Bell, User } from "lucide-react";
 
 export default function DeveloperPage() {
   return (
-    <main className="pb-24 px-6 md:px-12 max-w-7xl mx-auto w-full pt-12 md:pt-24">
+    <main className="pt-32 pb-24 px-6 md:px-12 max-w-7xl mx-auto w-full">
       {/* Developer Profile Section */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start relative z-10">
         {/* Hero Visual / Asymmetric Content */}
@@ -80,8 +80,8 @@ export default function DeveloperPage() {
           </div>
         </div>
         <div className="bg-primary-container p-12 flex flex-col justify-between group cursor-pointer relative overflow-hidden">
-          {/* Decorative Icon */}
-          <Wrench className="absolute -right-8 -bottom-8 w-48 h-48 text-on-primary-container/10 scale-125 rotate-12 group-hover:rotate-0 transition-transform duration-700" />
+          {/* Decorative Icon - using a settings/bolt icon as placeholder for precision_manufacturing */}
+          <Settings className="absolute -right-8 -bottom-8 w-48 h-48 text-on-primary-container/10 scale-125 rotate-12 group-hover:rotate-0 transition-transform duration-700" />
           <h3 className="text-3xl font-headline font-black text-on-primary-container relative z-10 leading-tight">PRECISION<br/>DRIVEN</h3>
           <p className="text-on-primary-container/80 text-sm font-label tracking-wide relative z-10">Crafting code with the same obsession as a die-cast artisan.</p>
         </div>

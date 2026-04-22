@@ -1,6 +1,6 @@
 'use client';
 
-import { KeyRound, Mail, X } from 'lucide-react'
+import { KeyRound, Mail, X, Eye } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -17,6 +17,12 @@ export default function SignUpPage() {
     const formData = new FormData(e.currentTarget)
     const email = formData.get('email') as string
     const password = formData.get('password') as string
+    const confirmPassword = formData.get('confirm_password') as string
+
+    if (password !== confirmPassword) {
+      setErrorText('Passwords do not match')
+      return
+    }
 
     const supabase = createClient()
     const { error } = await supabase.auth.signUp({
@@ -25,7 +31,7 @@ export default function SignUpPage() {
     })
 
     if (error) {
-      setErrorText('Could not authenticate user')
+      setErrorText(error.message)
     } else {
       router.push('/')
       router.refresh()
@@ -68,6 +74,18 @@ export default function SignUpPage() {
           </header>
           
           <form className="space-y-6" onSubmit={handleSubmit}>
+            {/* Full Name - Optional in Supabase signup but part of the design */}
+            <div className="group">
+              <label className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2 block group-focus-within:text-primary transition-colors" htmlFor="full_name">Full Name</label>
+              <input 
+                id="full_name" 
+                name="full_name" 
+                type="text" 
+                placeholder="Enzo Ferrari" 
+                className="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant/15 py-3 px-0 focus:ring-0 focus:border-primary text-on-surface placeholder:text-on-surface-variant/30 font-body transition-all outline-none" 
+              />
+            </div>
+
             {/* Email Address */}
             <div className="group">
               <label className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2 block group-focus-within:text-primary transition-colors" htmlFor="email">Email Address</label>
@@ -84,14 +102,43 @@ export default function SignUpPage() {
             {/* Password */}
             <div className="group">
               <label className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2 block group-focus-within:text-primary transition-colors" htmlFor="password">Password</label>
+              <div className="relative">
+                <input 
+                  id="password" 
+                  name="password" 
+                  type="password" 
+                  required
+                  placeholder="••••••••" 
+                  className="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant/15 py-3 px-0 focus:ring-0 focus:border-primary text-on-surface placeholder:text-on-surface-variant/30 font-body transition-all outline-none" 
+                />
+                <Eye size={18} className="absolute right-0 top-1/2 -translate-y-1/2 text-on-surface-variant/40 hover:text-on-surface cursor-pointer" />
+              </div>
+            </div>
+
+            {/* Confirm Password */}
+            <div className="group">
+              <label className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2 block group-focus-within:text-primary transition-colors" htmlFor="confirm_password">Confirm Password</label>
               <input 
-                id="password" 
-                name="password" 
+                id="confirm_password" 
+                name="confirm_password" 
                 type="password" 
                 required
                 placeholder="••••••••" 
                 className="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant/15 py-3 px-0 focus:ring-0 focus:border-primary text-on-surface placeholder:text-on-surface-variant/30 font-body transition-all outline-none" 
               />
+            </div>
+
+            {/* Terms & Conditions Micro-label */}
+            <div className="flex items-start gap-3 pt-2">
+              <input 
+                className="mt-1 bg-surface-container border-outline-variant/30 text-primary-container focus:ring-offset-background focus:ring-primary rounded-sm" 
+                id="terms" 
+                type="checkbox" 
+                required
+              />
+              <label className="text-[11px] text-on-surface-variant/60 leading-tight" htmlFor="terms">
+                By creating an account, you agree to our <Link className="text-on-surface hover:text-primary underline underline-offset-4 transition-colors" href="#">Terms of Service</Link> and <Link className="text-on-surface hover:text-primary underline underline-offset-4 transition-colors" href="#">Privacy Policy</Link>.
+              </label>
             </div>
             
             {errorText && <p className="text-error font-body text-sm text-center">{errorText}</p>}

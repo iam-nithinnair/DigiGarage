@@ -75,15 +75,30 @@ export default function Page() {
       <section className="py-24 px-8 md:px-20 bg-surface-container-low flex flex-col gap-12" id="iso-section">
         <div className="flex flex-col gap-2 items-center text-center">
           <span className="text-sm font-headline uppercase tracking-[0.3em] text-primary-container">Wishlist</span>
-          <h2 className="text-5xl font-black font-headline tracking-tighter">ISO</h2>
+          <h2 className="text-5xl font-black font-headline tracking-tighter">In Search Of</h2>
           <Link href="/iso" className="text-primary hover:brightness-110 transition-colors font-headline text-sm font-bold tracking-widest uppercase mt-4">
               View All ISO
           </Link>
         </div>
         <div className="max-w-5xl mx-auto w-full flex flex-col gap-4">
-          {isoSlice.map(iso => (
-            <ISOCard key={iso.id} iso={iso} />
-          ))}
+          {isoModels.length > 0 ? (
+            isoModels.slice(0, 3).map(iso => (
+              <div key={iso.id} className="bg-surface p-8 flex flex-col md:flex-row justify-between items-center gap-8 hover:bg-surface-container-high transition-colors group">
+                <div className="flex flex-col gap-1">
+                  <h3 className="text-2xl font-bold font-headline">{iso.name}</h3>
+                  <div className="flex gap-4 mt-2">
+                    <span className="px-2 py-1 bg-surface-container-highest text-[10px] font-bold font-headline uppercase tracking-tighter">Target Price: {iso.targetPrice}</span>
+                    <span className="px-2 py-1 bg-primary-container text-[10px] font-bold font-headline uppercase tracking-tighter">Rarity: {iso.rarity}</span>
+                  </div>
+                </div>
+                <button className="px-6 py-3 border border-outline-variant/30 hover:bg-primary-container hover:text-white transition-all font-headline uppercase text-xs tracking-widest font-bold">
+                  Search Sellers
+                </button>
+              </div>
+            ))
+          ) : (
+            <div className="text-center text-on-surface/50 font-body py-10">No items in your wishlist yet.</div>
+          )}
         </div>
       </section>
 
