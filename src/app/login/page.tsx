@@ -35,6 +35,7 @@ export default function LoginPage() {
     setLoading(false)
 
     if (error) {
+      console.error("Auth error details:", error)
       setErrorText(error.message)
       setEmail(emailValue)
     } else {

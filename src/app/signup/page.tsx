@@ -30,7 +30,7 @@ export default function SignUpPage() {
     }
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
     })
@@ -39,6 +39,10 @@ export default function SignUpPage() {
 
     if (error) {
       setErrorText(error.message)
+    } else if (data.session) {
+      // If email confirmation is off, we get a session immediately
+      router.push('/')
+      router.refresh()
     } else {
       setSuccess(true)
     }
