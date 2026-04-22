@@ -36,6 +36,9 @@ export default function TopNavBar() {
           <Link href="/collection" className={`${getLinkClass("/collection")} flex items-center gap-1 text-xs uppercase tracking-widest font-bold`}>
             <LayoutGrid size={14} /> Collection
           </Link>
+          <Link href="/discover" className={`${getLinkClass("/discover")} flex items-center gap-1 text-xs uppercase tracking-widest font-bold`}>
+            <Search size={14} /> Discover
+          </Link>
           <Link href="/iso" className={`${getLinkClass("/iso")} flex items-center gap-1 text-xs uppercase tracking-widest font-bold`}>
             <List size={14} /> ISO
           </Link>
