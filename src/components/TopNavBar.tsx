@@ -57,6 +57,13 @@ export default function TopNavBar() {
                 <span className="text-[10px] text-on-surface/40 uppercase tracking-widest font-label">Curator</span>
                 <span className="text-xs text-on-surface font-headline font-bold">{user.email?.split('@')[0]}</span>
               </div>
+              <Link 
+                href="/profile"
+                className="p-2 hover:bg-[#282a2c]/50 rounded-full transition-all text-[#e2e2e5]"
+                title="Profile"
+              >
+                <User size={20} />
+              </Link>
               <button 
                 onClick={() => signOut()}
                 className="p-2 hover:bg-error/10 rounded-full transition-all text-on-surface/60 hover:text-error"
