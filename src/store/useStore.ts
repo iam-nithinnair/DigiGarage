@@ -35,6 +35,7 @@ interface CollectionState {
   removeISOModel: (id: string) => Promise<void>;
   signOut: () => Promise<void>;
   resendConfirmationEmail: (email: string) => Promise<{ error: any }>;
+  initializeAuth: () => void;
 }
 
 export const useStore = create<CollectionState>((set, get) => {
@@ -45,6 +46,30 @@ export const useStore = create<CollectionState>((set, get) => {
     isoModels: [],
     user: null,
     isLoaded: false,
+    initializeAuth: () => {
+      const supabase = getSupabase();
+      
+      // Initial check
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (user) {
+          set({ user });
+          get().fetchData();
+        } else {
+          set({ isLoaded: true });
+        }
+      });
+
+      // Listen for changes
+      supabase.auth.onAuthStateChange((event, session) => {
+        console.log("Auth state changed:", event, session?.user?.email);
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          set({ user: session?.user ?? null });
+          get().fetchData();
+        } else if (event === 'SIGNED_OUT') {
+          set({ user: null, models: [], isoModels: [] });
+        }
+      });
+    },
     fetchData: async () => {
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

@@ -9,13 +9,11 @@ import { toast } from "sonner";
 
 export default function TopNavBar() {
   const pathname = usePathname();
-  const { isLoaded, fetchData, user, signOut } = useStore();
+  const { isLoaded, fetchData, user, signOut, initializeAuth } = useStore();
 
   useEffect(() => {
-    if (!isLoaded) {
-      fetchData();
-    }
-  }, [isLoaded, fetchData]);
+    initializeAuth();
+  }, [initializeAuth]);
 
   const getLinkClass = (path: string) => {
     const isActive = pathname === path;
