@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Grid3X3, ShoppingCart, Radar, LogOut, Edit3, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { toast } from "sonner";
 
 export default function ProfilePage() {
   const { user, models, isoModels, signOut, isLoaded } = useStore();
@@ -144,6 +145,7 @@ export default function ProfilePage() {
             <button 
               onClick={() => {
                 signOut();
+                toast.success("Session ended. Securely logged out.");
                 router.push("/login");
               }}
               className="bg-surface-container-high text-primary font-label text-xs uppercase tracking-wider px-6 py-3 rounded-none border border-primary-container/30 hover:bg-primary-container/10 transition-all duration-300 flex items-center gap-2"

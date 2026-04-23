@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 export default function SignUpPage() {
   const router = useRouter()
@@ -39,11 +40,14 @@ export default function SignUpPage() {
 
     if (error) {
       setErrorText(error.message)
+      toast.error(error.message)
     } else if (data.session) {
       // If email confirmation is off, we get a session immediately
+      toast.success("Account created successfully. Welcome!")
       router.push('/')
       router.refresh()
     } else {
+      toast.success("Registration successful! Check your inbox.")
       setSuccess(true)
     }
   }

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { useStore } from "@/store/useStore";
 import { Home, LayoutGrid, List, Heart, Search, User, Terminal, LogOut } from "lucide-react";
+import { toast } from "sonner";
 
 export default function TopNavBar() {
   const pathname = usePathname();
@@ -68,7 +69,10 @@ export default function TopNavBar() {
                 <User size={20} />
               </Link>
               <button 
-                onClick={() => signOut()}
+                onClick={() => {
+                  signOut();
+                  toast.success("Session ended. Securely logged out.");
+                }}
                 className="p-2 hover:bg-error/10 rounded-full transition-all text-on-surface/60 hover:text-error"
                 title="Sign Out"
               >

@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
 import { useStore } from '@/store/useStore'
+import { toast } from 'sonner'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -38,7 +39,9 @@ export default function LoginPage() {
       console.error("Auth error details:", error)
       setErrorText(error.message)
       setEmail(emailValue)
+      toast.error(error.message)
     } else {
+      toast.success("Welcome back, Curator.")
       router.push('/')
       router.refresh()
     }
