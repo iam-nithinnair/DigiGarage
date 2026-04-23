@@ -49,7 +49,10 @@ export default function TopNavBar() {
           </Link>
         </div>
         <div className="flex items-center gap-4">
-          <button className="p-2 hover:bg-[#282a2c]/50 rounded-full transition-all text-[#e2e2e5]">
+          <button 
+            className="p-2 hover:bg-[#282a2c]/50 rounded-full transition-all text-[#e2e2e5]"
+            aria-label="Search Collection"
+          >
             <Search size={20} />
           </button>
           
@@ -63,6 +66,7 @@ export default function TopNavBar() {
                 href="/profile"
                 className="p-2 hover:bg-[#282a2c]/50 rounded-full transition-all text-[#e2e2e5]"
                 title="Profile"
+                aria-label="View Profile"
               >
                 <User size={20} />
               </Link>
@@ -73,12 +77,17 @@ export default function TopNavBar() {
                 }}
                 className="p-2 hover:bg-error/10 rounded-full transition-all text-on-surface/60 hover:text-error"
                 title="Sign Out"
+                aria-label="Sign Out"
               >
                 <LogOut size={20} />
               </button>
             </div>
           ) : (
-            <Link href="/login" className="p-2 hover:bg-[#282a2c]/50 rounded-full transition-all text-[#e2e2e5]">
+            <Link 
+              href="/login" 
+              className="p-2 hover:bg-[#282a2c]/50 rounded-full transition-all text-[#e2e2e5]"
+              aria-label="Login"
+            >
               <User size={20} />
             </Link>
           )}

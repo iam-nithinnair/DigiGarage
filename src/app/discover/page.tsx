@@ -16,7 +16,7 @@ const DISCOVERY_DATABASE = [
   { name: "Koenigsegg Jesko", year: "2024", series: "HW Exotics", image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCPJ-o_lDNvdfita_Vt9CQyM5ZYagHA_bbOiG_2TMtwFNicPFK1AmToaa3mI8W_Bg4nuF7QmWtb_sGPlnzIXYvCj4V1bqjcgwVzjPHtnOmj8ZND_M0daiDqrEunfae5nF8KVgpoUhdnliZPpTyKoDLRoziqZIz_t6l3610GGtNn42EOJfYsOq1sO_v93nwEICxBn4k6taRVUVpg0ocU6x_4KldcGZPN96-vO3US2goOfEXoikOu1FxuHH6ZZzz2snt3ZpX0lrul4bc" },
   { name: "Batmobile (The Batman)", year: "2024", series: "Batman", image: "/cars/batmobile_1776684743669.png" },
   { name: "U.S.S. Enterprise NCC-1701", year: "2024", series: "HW Screen Time", image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDdQhVtGwaiP0cwO6TO7noyJO7zIUwFZIqAik1uJTOpfBWe5kqW3NWA8ZwenfMCckCBiG8Dq5f1Nu4YhiSm3tP11rErZrDDX2dAi6XvL0B1Sg5I43shH4zYxvSn48lboD6ySTUcGSC68bhKofG3oJx_HcrW7sN0m6R8y5YxT1sUgh6_0HsZuPTqSmtqQ8VfcYkzbxZlYfGxg1cS7l8RLCKtsj1G3FdX_37fjeQBEsPyy58nlGqexauGsRADOfgTkPSJ7BEn9ByDDSo" },
-  { name: "Dodge Charger SRT", year: "2024", series: "HW First Response", image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBejTqFREqoc73fY6hdevf54cFdor7OfZE451XCMDg_Cb5NlURyEGWnoovsyAPPPeWJqOliEfKCbp2Owtqmt5okpDeBcAqMW3KCeqh6LIz4n-8W9_w96nOqWosiluzukzwjqLv6MDbRq4hftWIHN65he4QhOKYVcPnKQ5ZtIc6bpqlhQBLdI1__BanJYj-Hr-NZmzA5r5sYqR_APtNpq3n3fxet0lD4Hz52otKlclxkVJ-FuDYp48E2sn0IlsG0DiRtIaaFt8SvMMs" },
+  { name: "Dodge Charger SRT", year: "2024", series: "HW First Response", image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBejTqFREqoc73fY6hdevf54cFdor7OfZE451XCMDg_Cb5NlURyEGWnoovsyAPPPeWJqOliEfKCbp2Owtpadding-mt5okpDeBcAqMW3KCeqh6LIz4n-8W9_w96nOqWosiluzukzwjqLv6MDbRq4hftWIHN65he4QhOKYVcPnKQ5ZtIc6bpqlhQBLdI1__BanJYj-Hr-NZmzA5r5sYqR_APtNpq3n3fxet0lD4Hz52otKlclxkVJ-FuDYp48E2sn0IlsG0DiRtIaaFt8SvMMs" },
   { name: "'89 Mercedes-Benz 560 SEC AMG", year: "2024", series: "HW Modified", image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDXT6eLfqcnXudqCOf6cTBTABnCzBsxAELj_dQ2RO343BbUtE5whoGAWUTGonYGeAFG8T6sajWTHlIWoNCt-wnIo4Ocnols0PMHQG9JgC59M_Z2rgoF3daV19TO3wnFSOK3EdA6lBoj3T0zREhDdAPvf5CssuYWVrhZOI5LqUVxlpc7G3-Pw7Wr94clKqMnY-PZ77LXzzzI6O028Z6HJVABZT7Qbq_bs0ER1J7phiAPTwTONGpDXXrlgpmzKbPfP5KqVglejrjGHSI" },
   
   // Iconic J-Imports
@@ -122,6 +122,7 @@ export default function DiscoverPage() {
             <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface/40" size={16} />
             <select 
               value={activeSeries}
+              aria-label="Filter by Hot Wheels series"
               onChange={(e) => setActiveSeries(e.target.value)}
               className="w-full bg-surface-container border-b-2 border-outline-variant/20 py-4 pl-12 pr-10 focus:border-primary transition-all outline-none font-body text-sm appearance-none cursor-pointer text-on-surface"
             >
@@ -136,6 +137,7 @@ export default function DiscoverPage() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface/40 group-focus-within:text-primary transition-colors" size={18} />
             <input 
               type="text"
+              aria-label="Search Hot Wheels castings or series"
               placeholder="Search by casting or series..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -184,6 +186,7 @@ export default function DiscoverPage() {
                   <button 
                     onClick={() => handleAdd(item)}
                     disabled={inCollection || isAdding || !user}
+                    aria-label={inCollection ? `${item.name} is already in your collection` : `Acquire ${item.name}`}
                     className={`w-full py-3 flex items-center justify-center gap-2 font-headline text-[10px] font-bold tracking-widest uppercase transition-all duration-300
                       ${inCollection 
                         ? 'bg-surface-container-highest text-on-surface/30 cursor-default' 

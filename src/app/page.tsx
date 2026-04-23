@@ -41,7 +41,11 @@ export default function Page() {
             Archiving automotive legends with surgical precision. The definitive platform for the modern scale model collector.
           </p>
           <div className="flex gap-4 pt-4">
-            <Link href="/collection" className="px-8 py-4 bg-primary-container text-on-primary-container font-headline font-bold uppercase tracking-widest hover:brightness-110 transition-all flex items-center gap-2">
+            <Link 
+              href="/collection" 
+              aria-label="Explore the full scale model collection"
+              className="px-8 py-4 bg-primary-container text-on-primary-container font-headline font-bold uppercase tracking-widest hover:brightness-110 transition-all flex items-center gap-2"
+            >
               Explore Collection
               <ArrowRight size={20} />
             </Link>
@@ -74,9 +78,9 @@ export default function Page() {
       {/* iso-section */}
       <section className="py-24 px-8 md:px-20 bg-surface-container-low flex flex-col gap-12" id="iso-section">
         <div className="flex flex-col gap-2 items-center text-center">
-          <span className="text-sm font-headline uppercase tracking-[0.3em] text-primary-container">Wishlist</span>
+          <span className="text-sm font-headline uppercase tracking-[0.3em] text-[#FF4D4D]">Wishlist</span>
           <h2 className="text-5xl font-black font-headline tracking-tighter">In Search Of</h2>
-          <Link href="/iso" className="text-primary hover:brightness-110 transition-colors font-headline text-sm font-bold tracking-widest uppercase mt-4">
+          <Link href="/iso" className="text-primary-container hover:brightness-110 transition-colors font-headline text-sm font-bold tracking-widest uppercase mt-4">
               View All ISO
           </Link>
         </div>
@@ -91,13 +95,16 @@ export default function Page() {
                     <span className="px-2 py-1 bg-primary-container text-[10px] font-bold font-headline uppercase tracking-tighter">Rarity: {iso.rarity}</span>
                   </div>
                 </div>
-                <button className="px-6 py-3 border border-outline-variant/30 hover:bg-primary-container hover:text-white transition-all font-headline uppercase text-xs tracking-widest font-bold">
+                <button 
+                  aria-label={`Search sellers for ${iso.name}`}
+                  className="px-6 py-3 border border-outline-variant/30 hover:bg-primary-container hover:text-white transition-all font-headline uppercase text-xs tracking-widest font-bold"
+                >
                   Search Sellers
                 </button>
               </div>
             ))
           ) : (
-            <div className="text-center text-on-surface/50 font-body py-10">No items in your wishlist yet.</div>
+            <div className="text-center text-on-surface/60 font-body py-10">No items in your wishlist yet.</div>
           )}
         </div>
       </section>

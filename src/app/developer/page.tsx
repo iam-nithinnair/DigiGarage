@@ -54,11 +54,19 @@ export default function DeveloperPage() {
               </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Link href="#" className="bg-primary text-on-primary font-label font-bold text-xs tracking-widest uppercase px-10 py-5 hover:bg-white transition-all duration-300 flex items-center justify-center gap-3 group">
+              <Link 
+                href="#" 
+                aria-label="Get in touch with Nithin Nair"
+                className="bg-primary text-on-primary font-label font-bold text-xs tracking-widest uppercase px-10 py-5 hover:bg-white transition-all duration-300 flex items-center justify-center gap-3 group"
+              >
                 Get in Touch
                 <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
               </Link>
-              <Link href="#" className="border border-outline-variant/30 text-on-surface font-label font-bold text-xs tracking-widest uppercase px-10 py-5 hover:bg-surface-container-high transition-all duration-300 text-center">
+              <Link 
+                href="#" 
+                aria-label="View Nithin Nair's full portfolio"
+                className="border border-outline-variant/30 text-on-surface font-label font-bold text-xs tracking-widest uppercase px-10 py-5 hover:bg-surface-container-high transition-all duration-300 text-center"
+              >
                 Portfolio
               </Link>
             </div>
