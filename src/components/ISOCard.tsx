@@ -20,6 +20,7 @@ export default function ISOCard({ iso }: ISOCardProps) {
       </div>
       <button 
         onClick={() => removeISOModel(iso.id)}
+        aria-label={`Remove ${iso.name} from wishlist`}
         className="px-6 py-3 border border-outline-variant/30 hover:bg-error hover:border-error hover:text-white transition-all font-headline uppercase text-xs tracking-widest font-bold"
       >
         Remove

@@ -28,6 +28,7 @@ export default function ModelCard({ model }: ModelCardProps) {
         <div className="absolute top-4 right-4 flex gap-2 z-10">
           <button 
             onClick={() => toggleFavorite(model.id)}
+            aria-label={model.isFavorite ? `Unfavorite ${model.name}` : `Favorite ${model.name}`}
             className={`p-2 bg-background/60 backdrop-blur-md rounded-full transition-colors ${model.isFavorite ? 'text-primary' : 'text-on-surface hover:text-primary'}`}
           >
              <Heart size={18} fill={model.isFavorite ? "currentColor" : "none"} />
@@ -50,6 +51,7 @@ export default function ModelCard({ model }: ModelCardProps) {
         <div className="pt-4 flex items-center justify-between border-t border-outline-variant/15">
           <button 
             onClick={() => removeModel(model.id)}
+            aria-label={`Remove ${model.name} from collection`}
             className="text-[10px] font-label uppercase tracking-[0.15em] text-on-surface/40 hover:text-error transition-colors flex items-center gap-1 group/btn"
           >
             <Trash2 size={14} />
