@@ -103,14 +103,14 @@ export const useStore = create<CollectionState>((set, get) => {
 
         if (!modelsRes.error && modelsRes.data) {
            loadedModels = modelsRes.data;
-        } else {
-           console.warn("Could not load collection models.", modelsRes.error);
+        } else if (modelsRes.error) {
+           console.error("Supabase Error (models):", modelsRes.error.message, modelsRes.error.details);
         }
 
         if (!isoModelsRes.error && isoModelsRes.data) {
            loadedIsoModels = isoModelsRes.data;
-        } else {
-           console.warn("Could not load ISO models.", isoModelsRes.error);
+        } else if (isoModelsRes.error) {
+           console.error("Supabase Error (iso_models):", isoModelsRes.error.message, isoModelsRes.error.details);
         }
 
         set({ 
