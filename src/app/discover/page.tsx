@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useStore } from "@/store/useStore";
 import Image from "next/image";
-import { Search, Plus, Sparkles, CheckCircle2, Loader2, Globe, Database } from "lucide-react";
+import { Search, Plus, Sparkles, CheckCircle2, Loader2, Globe, Database, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 
 interface WikiCar {
@@ -19,54 +19,78 @@ export default function DiscoverPage() {
   const [addingId, setAddingId] = useState<string | null>(null);
   const [wikiResults, setWikiResults] = useState<WikiCar[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [offset, setOffset] = useState<number | null>(null);
+  
+  // Ref to track if we've reached the user's requested 250 limit
+  const resultsCount = wikiResults.length;
 
-  // Wiki Search Logic
-  useEffect(() => {
-    const fetchModels = async () => {
-      setIsLoading(true);
-      try {
-        // Use a more specific query for the default load to get individual cars instead of list pages
-        const isDefault = searchQuery.length < 3;
-        const effectiveQuery = isDefault ? "2024 Hot Wheels mainline" : searchQuery;
-        
-        // We use generator=search to find pages, and pageimages to get the main thumbnail
-        // pithumbsize=800 for high quality
-        const response = await fetch(
-          `https://hotwheels.fandom.com/api.php?action=query&format=json&origin=*&prop=pageimages&generator=search&piprop=thumbnail&pithumbsize=800&gsrlimit=50&gsrsearch=${encodeURIComponent(effectiveQuery)}`
-        );
-        const data = await response.json();
-        
-        if (data.query?.pages) {
-          const results: WikiCar[] = Object.values(data.query.pages)
-            .sort((a: any, b: any) => a.index - b.index)
-            // Filter out non-car pages like "List of...", "Category:", etc.
-            .filter((page: any) => {
-               const title = page.title.toLowerCase();
-               return !title.startsWith('list of') && 
-                      !title.includes('category:') && 
-                      !title.includes('template:') &&
-                      !title.includes('talk:') &&
-                      page.thumbnail; // Only show results with proper images
-            })
-            .map((page: any) => ({
-              name: page.title,
-              year: isDefault ? "2024" : "N/A",
-              series: "Global Database",
-              image: page.thumbnail.source,
-            }));
-          setWikiResults(results);
-        } else {
-          setWikiResults([]);
-        }
-      } catch (error) {
-        console.error("Wiki search failed:", error);
-        toast.error("Could not reach global database");
-      } finally {
-        setIsLoading(false);
+  const fetchModels = async (currentOffset: number | null = null, isNewSearch: boolean = false) => {
+    if (isNewSearch) setIsLoading(true);
+    else setIsLoadingMore(true);
+
+    try {
+      const isDefault = searchQuery.length < 3;
+      const effectiveQuery = isDefault ? "2025 Hot Wheels mainline" : searchQuery;
+      
+      let url = `https://hotwheels.fandom.com/api.php?action=query&format=json&origin=*&prop=pageimages&generator=search&piprop=thumbnail&pithumbsize=800&gsrlimit=50&gsrsearch=${encodeURIComponent(effectiveQuery)}`;
+      
+      if (currentOffset) {
+        url += `&gsroffset=${currentOffset}`;
       }
-    };
 
-    const timer = setTimeout(fetchModels, searchQuery.length >= 3 ? 600 : 0);
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (data.query?.pages) {
+        const newResults: WikiCar[] = Object.values(data.query.pages)
+          .sort((a: any, b: any) => a.index - b.index)
+          .filter((page: any) => {
+             const title = page.title.toLowerCase();
+             return !title.startsWith('list of') && 
+                    !title.includes('category:') && 
+                    !title.includes('template:') &&
+                    !title.includes('talk:') &&
+                    page.thumbnail;
+          })
+          .map((page: any) => ({
+            name: page.title,
+            year: isDefault ? "2025" : "N/A",
+            series: "Global Database",
+            image: page.thumbnail.source,
+          }));
+
+        if (isNewSearch) {
+          setWikiResults(newResults);
+        } else {
+          setWikiResults(prev => [...prev, ...newResults]);
+        }
+
+        // Set next offset if available, up to 250 models
+        if (data.continue?.gsroffset && (isNewSearch ? newResults.length : (wikiResults.length + newResults.length)) < 250) {
+          setOffset(data.continue.gsroffset);
+        } else {
+          setOffset(null);
+        }
+      } else {
+        if (isNewSearch) setWikiResults([]);
+        setOffset(null);
+      }
+    } catch (error) {
+      console.error("Wiki search failed:", error);
+      toast.error("Could not reach global database");
+    } finally {
+      setIsLoading(false);
+      setIsLoadingMore(false);
+    }
+  };
+
+  // Initial load & search with debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchModels(null, true);
+    }, searchQuery.length >= 3 ? 600 : 0);
+    
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
@@ -111,7 +135,7 @@ export default function DiscoverPage() {
             Discover <span className="text-primary-container">Castings</span>
           </h1>
           <p className="text-on-surface-variant/70 leading-relaxed max-w-lg text-lg">
-            Accessing the Hot Wheels Fandom database. Search through thousands of historical models and legendary silhouettes in real-time.
+            Cataloging the 250 Mainline models for 2025. Search through thousands of historical models and legendary silhouettes in real-time.
           </p>
         </div>
 
@@ -136,7 +160,7 @@ export default function DiscoverPage() {
         {isLoading ? (
           <div className="col-span-full py-40 flex flex-col items-center gap-6">
             <Loader2 className="animate-spin text-primary-container" size={64} />
-            <p className="font-label text-sm uppercase tracking-[0.3em] text-on-surface/40 animate-pulse">Querying Fandom Database...</p>
+            <p className="font-label text-sm uppercase tracking-[0.3em] text-on-surface/40 animate-pulse">Initializing 2025 Archive...</p>
           </div>
         ) : wikiResults.map((item, index) => {
           const inCollection = isAlreadyInCollection(item.name);
@@ -206,6 +230,28 @@ export default function DiscoverPage() {
           );
         })}
 
+        {/* Load More Button */}
+        {offset && !isLoading && (
+          <div className="col-span-full py-12 flex justify-center border-t border-white/5 mt-12">
+            <button 
+              onClick={() => fetchModels(offset)}
+              disabled={isLoadingMore}
+              className="group flex flex-col items-center gap-4 text-on-surface/40 hover:text-primary transition-all"
+            >
+              {isLoadingMore ? (
+                <Loader2 className="animate-spin text-primary" size={32} />
+              ) : (
+                <>
+                  <div className="p-4 bg-surface-container-high rounded-full group-hover:bg-primary-container group-hover:text-on-primary-container transition-all">
+                    <ChevronDown size={24} />
+                  </div>
+                  <span className="font-label text-[10px] uppercase tracking-[0.3em] font-bold">Load More Models</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
         {!isLoading && wikiResults.length === 0 && (
           <div className="col-span-full py-40 text-center bg-surface-container-low/50 border border-dashed border-white/10 rounded-2xl">
             <div className="flex flex-col items-center gap-4">
@@ -223,7 +269,9 @@ export default function DiscoverPage() {
       {/* Footer Metrics */}
       <footer className="mt-20 pt-10 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="text-on-surface/30 font-label text-[10px] uppercase tracking-widest flex items-center gap-4">
-          <span className="flex items-center gap-1.5"><Globe size={10}/> Powered by Hot Wheels Fandom Wiki API</span>
+          <span className="flex items-center gap-1.5"><Globe size={10}/> Total Models Loaded: {wikiResults.length}</span>
+          <div className="w-[1px] h-3 bg-white/10"></div>
+          <span className="flex items-center gap-1.5">Powered by Hot Wheels Fandom Wiki API</span>
         </div>
         {!user && (
           <p className="text-primary-container font-label text-[10px] uppercase tracking-widest font-bold animate-pulse bg-primary-container/10 px-4 py-2 rounded-full">
