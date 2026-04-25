@@ -3,13 +3,13 @@
 import { useStore } from "@/store/useStore";
 import Image from "next/image";
 import Link from "next/link";
-import { Grid3X3, ShoppingCart, Radar, LogOut, Edit3, ChevronRight } from "lucide-react";
+import { Grid3X3, ShoppingCart, Radar, LogOut, Edit3, ChevronRight, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
 export default function ProfilePage() {
-  const { user, models, isoModels, signOut, isLoaded } = useStore();
+  const { user, models, isoModels, signOut, isLoaded, initializeAuth } = useStore();
   const router = useRouter();
 
   useEffect(() => {
@@ -21,6 +21,9 @@ export default function ProfilePage() {
   if (!user) return null;
 
   const recentAcquisitions = models.slice(0, 2);
+  
+  // Calculate total acquisition cost
+  const totalInvestment = models.reduce((acc, model) => acc + (model.purchase_price || 0), 0);
 
   return (
     <main className="flex-grow w-full max-w-[1600px] mx-auto px-6 md:px-12 py-32 flex flex-col gap-12">
@@ -57,6 +60,20 @@ export default function ProfilePage() {
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary-container rounded-full blur-[100px] opacity-10 pointer-events-none translate-x-1/2 -translate-y-1/2"></div>
         </section>
 
+        {/* Financial Overview (New Acquisition Metric) */}
+        <section className="col-span-1 md:col-span-6 lg:col-span-4 bg-primary-container rounded-xl p-8 flex flex-col justify-between border border-white/5 hover:brightness-110 transition-all duration-500 shadow-2xl relative overflow-hidden">
+           <Wallet className="absolute -right-4 -top-4 w-32 h-32 text-on-primary-container/10 rotate-12" />
+           <div className="z-10">
+             <h3 className="font-headline text-sm text-on-primary-container/60 uppercase tracking-[0.15em] mb-2">Acquisition Capital</h3>
+             <div className="font-headline text-5xl font-black text-on-primary-container tracking-tighter">
+               ${totalInvestment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+             </div>
+           </div>
+           <p className="z-10 font-label text-[10px] uppercase tracking-widest text-on-primary-container/60 mt-8">
+             Total capital deployed across {models.length} digital museum assets.
+           </p>
+        </section>
+
         {/* Quick Stats */}
         <section className="col-span-1 md:col-span-6 lg:col-span-4 bg-surface-container-low rounded-xl p-8 flex flex-col justify-between border border-white/5 hover:bg-surface-container transition-colors duration-500 shadow-2xl">
           <h3 className="font-headline text-sm text-on-surface/30 uppercase tracking-[0.15em] mb-6">Metrics</h3>
@@ -86,7 +103,7 @@ export default function ProfilePage() {
         </section>
 
         {/* Recent Activity */}
-        <section className="col-span-1 md:col-span-6 lg:col-span-6 bg-surface-container-low rounded-xl p-8 border border-white/5 hover:bg-surface-container transition-colors duration-500 shadow-2xl">
+        <section className="col-span-1 md:col-span-6 lg:col-span-4 bg-surface-container-low rounded-xl p-8 border border-white/5 hover:bg-surface-container transition-colors duration-500 shadow-2xl">
           <div className="flex justify-between items-end mb-8 border-b border-white/5 pb-4">
             <h3 className="font-headline text-xl text-on-surface uppercase tracking-tight font-bold">Recent Acquisitions</h3>
             <Link href="/collection" className="font-label text-xs text-primary-container hover:text-primary transition-colors uppercase tracking-widest flex items-center gap-1">
@@ -106,7 +123,7 @@ export default function ProfilePage() {
                 </div>
                 <div className="flex-grow">
                   <h4 className="font-headline text-sm font-bold text-on-surface uppercase">{model.name}</h4>
-                  <p className="font-body text-xs text-on-surface/40">{model.manufacturer} • {model.scale} • {model.year}</p>
+                  <p className="font-body text-xs text-on-surface/40">{model.manufacturer} • {model.scale}</p>
                 </div>
               </div>
             )) : (
@@ -116,7 +133,7 @@ export default function ProfilePage() {
         </section>
 
         {/* Preferences & Actions */}
-        <section className="col-span-1 md:col-span-12 lg:col-span-6 flex flex-col gap-6">
+        <section className="col-span-1 md:col-span-6 lg:col-span-4 flex flex-col gap-6">
           <div className="bg-surface-container-low rounded-xl p-8 border border-white/5 flex-grow hover:bg-surface-container transition-colors duration-500 shadow-2xl">
             <h3 className="font-headline text-xl text-on-surface uppercase tracking-tight font-bold mb-6 border-b border-white/5 pb-4">Display Preferences</h3>
             <ul className="space-y-4">

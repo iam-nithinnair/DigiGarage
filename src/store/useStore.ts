@@ -12,6 +12,10 @@ export interface Model {
   isFavorite: boolean;
   image: string;
   user_id: string;
+  purchase_price?: number;
+  condition?: string;
+  grade?: string;
+  storage_location?: string;
 }
 
 export interface ISOModel {
@@ -90,8 +94,8 @@ export const useStore = create<CollectionState>((set, get) => {
         }
 
         const [modelsRes, isoModelsRes] = await Promise.all([
-          supabase.from('models').select('*').eq('user_id', user.id),
-          supabase.from('iso_models').select('*').eq('user_id', user.id)
+          supabase.from('models').select('*').order('created_at', { ascending: false }).eq('user_id', user.id),
+          supabase.from('iso_models').select('*').order('created_at', { ascending: false }).eq('user_id', user.id)
         ]);
         
         let loadedModels = [];
@@ -143,7 +147,7 @@ export const useStore = create<CollectionState>((set, get) => {
           console.error("Supabase error adding model:", error);
         } else if (data && data.length > 0) {
           console.log("Model added successfully:", data[0]);
-          set((state) => ({ models: [...state.models, data[0]] }));
+          set((state) => ({ models: [data[0], ...state.models] }));
         } else {
           console.warn("Model inserted but no data returned. Check RLS policies.");
         }
@@ -209,7 +213,7 @@ export const useStore = create<CollectionState>((set, get) => {
           console.error("Supabase error adding ISO model:", error);
         } else if (data && data.length > 0) {
           console.log("ISO model added successfully:", data[0]);
-          set((state) => ({ isoModels: [...state.isoModels, data[0]] }));
+          set((state) => ({ isoModels: [data[0], ...state.isoModels] }));
         } else {
           console.warn("ISO model inserted but no data returned. Check RLS policies.");
         }
