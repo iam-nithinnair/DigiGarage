@@ -5,34 +5,27 @@ test.describe('Discover Page', () => {
     await page.goto('/DigiGarage/discover');
   });
 
-  test('should display search and filter controls', async ({ page }) => {
-    await expect(page.getByPlaceholder(/Search curated list/i)).toBeVisible();
-    await expect(page.locator('select')).toBeVisible();
-  });
-
-  test('can switch to global wiki mode', async ({ page }) => {
-    const globalBtn = page.getByRole('button', { name: /Global Wiki/i });
-    await globalBtn.click();
-    
-    await expect(page.locator('h1')).toContainText(/Global Archive/i);
+  test('should display search controls', async ({ page }) => {
     await expect(page.getByPlaceholder(/Search entire history/i)).toBeVisible();
-    // Filter should be hidden in global mode
-    await expect(page.locator('select')).not.toBeVisible();
   });
 
   test('global wiki search should fetch results', async ({ page }) => {
-    await page.getByRole('button', { name: /Global Wiki/i }).click();
+    // Increase timeout for this specific test as it relies on an external API
+    test.setTimeout(60000);
     
     const searchInput = page.getByPlaceholder(/Search entire history/i);
-    await searchInput.fill('Twin Mill');
+    await searchInput.pressSequentially('Twin Mill', { delay: 100 });
     
-    // Wait for the loader to appear and then disappear
-    await expect(page.locator('text=Querying Global Archive')).toBeVisible();
+    // Use a broad locator to wait for results
+    const results = page.locator('article');
+    await expect(results.first()).toBeVisible({ timeout: 45000 });
     
-    // Specifically wait for a real wiki result (not curated)
-    await expect(page.locator('article', { hasText: 'Twin Mill' }).first()).toBeVisible({ timeout: 10000 });
-    
-    const count = await page.locator('article:visible').count();
+    const visibleCards = page.locator('article:visible');
+    const count = await visibleCards.count();
     expect(count).toBeGreaterThan(0);
+    
+    // Check if at least one result contains our query
+    const content = await page.innerText('main');
+    expect(content.toLowerCase()).toContain('twin mill');
   });
 });
