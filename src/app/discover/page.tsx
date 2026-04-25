@@ -20,28 +20,40 @@ export default function DiscoverPage() {
   const [wikiResults, setWikiResults] = useState<WikiCar[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Debounced Wiki Search
+  // Wiki Search Logic
   useEffect(() => {
-    if (searchQuery.length < 3) {
-      setWikiResults([]);
-      return;
-    }
-
-    const timer = setTimeout(async () => {
+    const fetchModels = async () => {
       setIsLoading(true);
       try {
+        // Use a more specific query for the default load to get individual cars instead of list pages
+        const isDefault = searchQuery.length < 3;
+        const effectiveQuery = isDefault ? "2024 Hot Wheels mainline" : searchQuery;
+        
+        // We use generator=search to find pages, and pageimages to get the main thumbnail
+        // pithumbsize=800 for high quality
         const response = await fetch(
-          `https://hotwheels.fandom.com/api.php?action=query&format=json&origin=*&prop=pageimages&generator=search&piprop=thumbnail&pithumbsize=600&gsrsearch=${encodeURIComponent(searchQuery)}`
+          `https://hotwheels.fandom.com/api.php?action=query&format=json&origin=*&prop=pageimages&generator=search&piprop=thumbnail&pithumbsize=800&gsrlimit=50&gsrsearch=${encodeURIComponent(effectiveQuery)}`
         );
         const data = await response.json();
         
         if (data.query?.pages) {
-          const results: WikiCar[] = Object.values(data.query.pages).map((page: any) => ({
-            name: page.title,
-            year: "N/A",
-            series: "Global Database",
-            image: page.thumbnail?.source || "https://images.unsplash.com/photo-1594787318286-3d835c1d207f?q=80&w=600&auto=format&fit=crop",
-          }));
+          const results: WikiCar[] = Object.values(data.query.pages)
+            .sort((a: any, b: any) => a.index - b.index)
+            // Filter out non-car pages like "List of...", "Category:", etc.
+            .filter((page: any) => {
+               const title = page.title.toLowerCase();
+               return !title.startsWith('list of') && 
+                      !title.includes('category:') && 
+                      !title.includes('template:') &&
+                      !title.includes('talk:') &&
+                      page.thumbnail; // Only show results with proper images
+            })
+            .map((page: any) => ({
+              name: page.title,
+              year: isDefault ? "2024" : "N/A",
+              series: "Global Database",
+              image: page.thumbnail.source,
+            }));
           setWikiResults(results);
         } else {
           setWikiResults([]);
@@ -52,8 +64,9 @@ export default function DiscoverPage() {
       } finally {
         setIsLoading(false);
       }
-    }, 600);
+    };
 
+    const timer = setTimeout(fetchModels, searchQuery.length >= 3 ? 600 : 0);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
@@ -159,7 +172,7 @@ export default function DiscoverPage() {
               <div className="p-6 flex-grow flex flex-col">
                 <div className="flex justify-between items-start mb-2">
                   <span className="font-label text-[9px] tracking-widest text-primary-container uppercase font-bold truncate pr-4">Global Database</span>
-                  <span className="font-label text-[9px] tracking-widest text-on-surface/40 uppercase font-bold">N/A</span>
+                  <span className="font-label text-[9px] tracking-widest text-on-surface/40 uppercase font-bold">{item.year}</span>
                 </div>
                 <h3 className="font-headline text-lg font-bold text-on-surface uppercase mb-6 line-clamp-2 min-h-[3.5rem] leading-tight group-hover:text-primary transition-colors">{item.name}</h3>
                 
@@ -198,7 +211,7 @@ export default function DiscoverPage() {
             <div className="flex flex-col items-center gap-4">
               <Database className="text-on-surface/10" size={48} />
               <p className="text-on-surface/40 font-body italic text-xl max-w-sm mx-auto">
-                {searchQuery.length < 3 
+                {searchQuery.length < 3 && searchQuery.length > 0
                   ? "Type at least 3 characters to search the global Hot Wheels history"
                   : `No legendary castings found matching "${searchQuery}"`}
               </p>
