@@ -14,7 +14,7 @@ export default function ISOCard({ iso }: ISOCardProps) {
       <div className="flex flex-col gap-1">
         <h3 className="text-2xl font-bold font-headline">{iso.name}</h3>
         <div className="flex gap-4 mt-2">
-          <span className="px-2 py-1 bg-surface-container-highest text-[10px] font-bold font-headline uppercase tracking-tighter">Target Price: {iso.targetPrice}</span>
+          <span className="px-2 py-1 bg-surface-container-highest text-[10px] font-bold font-headline uppercase tracking-tighter">Target Price: ₹{iso.targetPrice}</span>
           <span className="px-2 py-1 bg-primary-container text-[10px] font-bold font-headline uppercase tracking-tighter">Rarity: {iso.rarity}</span>
         </div>
       </div>

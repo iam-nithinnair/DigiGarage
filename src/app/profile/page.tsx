@@ -66,7 +66,7 @@ export default function ProfilePage() {
            <div className="z-10">
              <h3 className="font-headline text-sm text-on-primary-container/60 uppercase tracking-[0.15em] mb-2">Acquisition Capital</h3>
              <div className="font-headline text-5xl font-black text-on-primary-container tracking-tighter">
-               ${totalInvestment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+               ₹{totalInvestment.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
              </div>
            </div>
            <p className="z-10 font-label text-[10px] uppercase tracking-widest text-on-primary-container/60 mt-8">

@@ -65,7 +65,7 @@ export default function ModelCard({ model }: ModelCardProps) {
           {model.purchase_price !== undefined && model.purchase_price !== null && (
             <div className="flex items-center gap-1.5 text-on-surface/40">
               <Tag size={12} className="text-primary-container" />
-              <span className="font-label text-[10px] uppercase tracking-tighter">${Number(model.purchase_price).toFixed(2)}</span>
+              <span className="font-label text-[10px] uppercase tracking-tighter">₹{Number(model.purchase_price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
             </div>
           )}
           {model.storage_location && (

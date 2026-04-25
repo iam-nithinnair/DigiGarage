@@ -67,7 +67,7 @@ export default function AddISOModal({ isOpen, onClose }: AddISOModalProps) {
                 value={targetPrice}
                 onChange={e => setTargetPrice(e.target.value)}
                 className="w-full bg-surface-container-lowest border-none border-b-2 border-outline-variant/15 py-3 px-0 focus:border-primary focus:ring-0 placeholder:text-on-surface/20" 
-                placeholder="e.g. $500" 
+                placeholder="e.g. ₹5,000" 
                 type="text" 
               />
             </div>
