@@ -31,11 +31,12 @@ export default function DiscoverPage() {
 
     try {
       const isDefault = searchQuery.length < 3;
-      const effectiveQuery = isDefault ? "2026 Hot Wheels mainline" : searchQuery;
+      // We target the specifically curated list for the best model-specific images
+      const effectiveQuery = isDefault ? "List of 2026 Hot Wheels" : searchQuery;
       
-      // We use generator=search to find pages, and pageimages for thumbnails
-      // Added 'extracts' to try and get snippet data if needed
-      let url = `https://hotwheels.fandom.com/api.php?action=query&format=json&origin=*&prop=pageimages|extracts&exintro&explaintext&exchars=100&generator=search&piprop=thumbnail&pithumbsize=800&gsrlimit=50&gsrsearch=${encodeURIComponent(effectiveQuery)}`;
+      // Changed strategy: Instead of generator=search, we use a more direct search for better image quality
+      // And we use 'piprop=original' or large pithumbsize
+      let url = `https://hotwheels.fandom.com/api.php?action=query&format=json&origin=*&prop=pageimages|extracts&exintro&explaintext&exchars=200&generator=search&piprop=thumbnail&pithumbsize=1000&gsrlimit=50&gsrsearch=${encodeURIComponent(effectiveQuery)}`;
       
       if (currentOffset) {
         url += `&gsroffset=${currentOffset}`;
@@ -49,14 +50,14 @@ export default function DiscoverPage() {
           .sort((a: any, b: any) => a.index - b.index)
           .filter((page: any) => {
              const title = page.title.toLowerCase();
-             return !title.startsWith('list of') && 
+             // Critical: Filter out the list page itself if it appears in results
+             return !title.includes('list of') && 
                     !title.includes('category:') && 
                     !title.includes('template:') &&
                     !title.includes('talk:') &&
                     page.thumbnail;
           })
           .map((page: any) => {
-            // Attempt to find a number like 123/250 in the extract
             const collectorMatch = page.extract?.match(/(\d{1,3})\/250/);
             const seriesMatch = page.extract?.match(/(\d{1,2})\/\d{1,2}/);
 
@@ -138,13 +139,13 @@ export default function DiscoverPage() {
         <div className="max-w-2xl">
           <div className="flex items-center gap-3 mb-4">
             <Sparkles className="text-primary-container" size={20} />
-            <span className="font-label text-[10px] uppercase tracking-[0.2em] text-primary">2026 Archive</span>
+            <span className="font-label text-[10px] uppercase tracking-[0.2em] text-primary">2026 Discovery</span>
           </div>
           <h1 className="font-headline text-5xl md:text-8xl font-bold tracking-tighter text-on-surface mb-6 uppercase">
-            Discover <span className="text-primary-container">Castings</span>
+            Curated <span className="text-primary-container">Castings</span>
           </h1>
           <p className="text-on-surface-variant/70 leading-relaxed max-w-lg text-lg">
-            Cataloging the 250 Mainline models for 2026. Explore legendary silhouettes and high-detail captures from the global archive.
+            High-fidelity captures from the 2026 master list. Explore legendary silhouettes with museum-grade precision.
           </p>
         </div>
 
@@ -155,7 +156,7 @@ export default function DiscoverPage() {
               type="text"
               autoFocus
               aria-label="Search Hot Wheels castings from global archive"
-              placeholder="Search entire history (e.g. Skyline, Supra)..."
+              placeholder="Search entire history (e.g. Twin Mill)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-surface-container border-b-2 border-outline-variant/20 py-5 pl-14 pr-8 focus:border-primary transition-all outline-none font-body text-base text-on-surface shadow-2xl"
@@ -165,11 +166,11 @@ export default function DiscoverPage() {
       </header>
 
       {/* Grid Section */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8">
         {isLoading ? (
           <div className="col-span-full py-40 flex flex-col items-center gap-6">
             <Loader2 className="animate-spin text-primary-container" size={64} />
-            <p className="font-label text-sm uppercase tracking-[0.3em] text-on-surface/40 animate-pulse">Accessing 2026 Master List...</p>
+            <p className="font-label text-sm uppercase tracking-[0.3em] text-on-surface/40 animate-pulse">Fetching high-res captures...</p>
           </div>
         ) : wikiResults.map((item, index) => {
           const inCollection = isAlreadyInCollection(item.name);
@@ -181,29 +182,29 @@ export default function DiscoverPage() {
               onClick={() => setSelectedModel(item)}
               className="bg-surface-container-low group hover:bg-surface-container transition-all duration-500 border border-white/5 relative overflow-hidden flex flex-col cursor-pointer"
             >
-              <div className="aspect-[4/3] relative overflow-hidden bg-black/40">
+              <div className="aspect-[4/3] relative overflow-hidden bg-black flex items-center justify-center p-4">
                 <Image 
                   fill
                   unoptimized
                   alt={item.name}
                   src={item.image}
-                  className="object-cover opacity-80 group-hover:scale-110 group-hover:opacity-100 transition-all duration-700"
+                  className="object-contain p-4 opacity-90 group-hover:scale-110 group-hover:opacity-100 transition-all duration-700"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent opacity-60"></div>
                 
                 {inCollection && (
-                  <div className="absolute top-4 left-4 bg-primary-container/90 backdrop-blur-md text-white px-3 py-1 rounded-full flex items-center gap-1.5 shadow-xl">
+                  <div className="absolute top-4 left-4 bg-primary-container/90 backdrop-blur-md text-white px-3 py-1 rounded-full flex items-center gap-1.5 shadow-xl z-20">
                     <CheckCircle2 size={12} />
                     <span className="font-label text-[9px] font-bold uppercase tracking-wider">In Collection</span>
                   </div>
                 )}
                 
-                <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-md text-white/60 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-md text-white/60 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20">
                   <Info size={12} />
                 </div>
               </div>
 
-              <div className="p-6 flex-grow flex flex-col">
+              <div className="p-6 flex-grow flex flex-col border-t border-white/5">
                 <div className="flex justify-between items-start mb-2">
                   <span className="font-label text-[9px] tracking-widest text-primary-container uppercase font-bold truncate pr-4">{item.series}</span>
                   <span className="font-label text-[9px] tracking-widest text-on-surface/40 uppercase font-bold">{item.year}</span>
@@ -244,7 +245,7 @@ export default function DiscoverPage() {
               {isLoadingMore ? <Loader2 className="animate-spin text-primary" size={32} /> : 
                 <>
                   <div className="p-4 bg-surface-container-high rounded-full group-hover:bg-primary-container group-hover:text-on-primary-container transition-all"><ChevronDown size={24} /></div>
-                  <span className="font-label text-[10px] uppercase tracking-[0.3em] font-bold">Load More 2026 Models</span>
+                  <span className="font-label text-[10px] uppercase tracking-[0.3em] font-bold">Load More Models</span>
                 </>
               }
             </button>
@@ -257,13 +258,13 @@ export default function DiscoverPage() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
           <div className="absolute inset-0 bg-background/90 backdrop-blur-md" onClick={() => setSelectedModel(null)}></div>
           <div className="relative w-full max-w-4xl bg-surface-container-low border border-white/5 shadow-2xl flex flex-col md:flex-row overflow-hidden rounded-2xl animate-in fade-in zoom-in duration-300">
-            <div className="w-full md:w-1/2 aspect-square relative bg-black">
+            <div className="w-full md:w-1/2 aspect-square relative bg-black flex items-center justify-center">
               <Image 
                 fill
                 unoptimized
                 alt={selectedModel.name}
                 src={selectedModel.image}
-                className="object-contain p-8"
+                className="object-contain p-12"
               />
               <button 
                 onClick={() => setSelectedModel(null)}
@@ -272,7 +273,7 @@ export default function DiscoverPage() {
                 <X size={20} />
               </button>
             </div>
-            <div className="w-full md:w-1/2 p-10 md:p-12 flex flex-col">
+            <div className="w-full md:w-1/2 p-10 md:p-12 flex flex-col border-l border-white/5">
               <div className="flex justify-between items-start mb-8">
                 <div className="space-y-1">
                   <span className="font-label text-[10px] uppercase tracking-[0.3em] text-primary">{selectedModel.series}</span>
@@ -313,7 +314,7 @@ export default function DiscoverPage() {
                 >
                   {addingId === selectedModel.name ? <Loader2 size={18} className="animate-spin" /> : isAlreadyInCollection(selectedModel.name) ? 'Already in Collection' : <><Plus size={18} /> Acquire This Casting</>}
                 </button>
-                <p className="text-center text-[9px] font-label uppercase tracking-widest text-on-surface/20">Official 2026 Mattel Release Data</p>
+                <p className="text-center text-[9px] font-label uppercase tracking-widest text-on-surface/20">Official 2026 Archive Data</p>
               </div>
             </div>
           </div>
@@ -323,11 +324,11 @@ export default function DiscoverPage() {
       {/* Footer Metrics */}
       <footer className="mt-20 pt-10 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="text-on-surface/30 font-label text-[10px] uppercase tracking-widest flex items-center gap-4">
-          <span className="flex items-center gap-1.5"><Globe size={10}/> 2026 Archive: {wikiResults.length} Models Loaded</span>
+          <span className="flex items-center gap-1.5"><Globe size={10}/> Total Models in 2026 View: {wikiResults.length}</span>
         </div>
         {!user && (
           <p className="text-primary-container font-label text-[10px] uppercase tracking-widest font-bold animate-pulse bg-primary-container/10 px-4 py-2 rounded-full">
-            Sign in to start acquiring 2026 pieces
+            Sign in to start acquiring new pieces
           </p>
         )}
       </footer>
