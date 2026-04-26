@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useStore } from "@/store/useStore";
-import Image from "next/image";
+
 import { Search, Plus, Sparkles, CheckCircle2, Loader2, Globe, Database, ChevronDown, X, Info, Hash, AlertTriangle, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
@@ -49,7 +49,8 @@ export default function DiscoverPage() {
         
         if (displayName.includes('Color)')) continue;
 
-        const series = cells[3]?.replace(/bgcolor=".*"\|/, '').replace(/\[\[|\]\]/g, '').split('|').pop() || "2026 Mainline";
+        const rawSeries = cells[3]?.replace(/bgcolor=".*"\|/, '').replace(/\[\[|\]\]/g, '').split('|').pop() || "2026 Mainline";
+        const series = rawSeries.replace(/<[^>]*>/g, '').replace(/\{\{[^}]*\}\}/g, '').trim();
         const fileMatch = cells[5]?.match(/File:([^|\]]+)/);
         const fileName = fileMatch ? fileMatch[1] : null;
 
@@ -208,14 +209,15 @@ export default function DiscoverPage() {
               className="bg-surface-container-low group hover:bg-surface-container transition-all duration-500 border border-white/5 relative overflow-hidden flex flex-col cursor-pointer shadow-lg hover:shadow-primary/5"
             >
               <div className="aspect-[4/3] relative overflow-hidden bg-[#050505] flex items-center justify-center">
-                <Image 
-                  fill
-                  unoptimized
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img 
                   alt={item.name}
                   src={item.image}
-                  className="object-contain p-4 transition-transform duration-700 group-hover:scale-110"
+                  referrerPolicy="no-referrer"
+                  loading="lazy"
+                  className="absolute inset-0 w-full h-full object-contain p-4 transition-transform duration-700 group-hover:scale-110"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent opacity-60"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent opacity-60 pointer-events-none"></div>
                 
                 {inCollection && (
                   <div className="absolute top-4 left-4 bg-primary-container/90 backdrop-blur-md text-white px-3 py-1 rounded-full flex items-center gap-1.5 shadow-xl z-20">
@@ -275,12 +277,12 @@ export default function DiscoverPage() {
           <div className="absolute inset-0 bg-background/98 backdrop-blur-2xl" onClick={() => setSelectedModel(null)}></div>
           <div className="relative w-full max-w-6xl bg-surface-container-low border border-white/10 shadow-2xl flex flex-col md:flex-row overflow-hidden rounded-[2.5rem] animate-in fade-in slide-in-from-bottom-12 duration-700">
             <div className="w-full md:w-[60%] aspect-square relative bg-[#020202] flex items-center justify-center p-16 group/img">
-              <Image 
-                fill
-                unoptimized
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img 
                 alt={selectedModel.name}
                 src={selectedModel.image}
-                className="object-contain p-12 transition-transform duration-1000 group-hover/img:scale-105"
+                referrerPolicy="no-referrer"
+                className="absolute inset-0 w-full h-full object-contain p-12 transition-transform duration-1000 group-hover/img:scale-105"
               />
             </div>
             <div className="w-full md:w-[40%] p-10 md:p-16 flex flex-col border-l border-white/5 bg-gradient-to-br from-surface-container-low to-background">
