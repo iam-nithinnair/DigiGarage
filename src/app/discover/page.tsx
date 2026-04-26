@@ -50,58 +50,39 @@ export default function DiscoverPage() {
         if (displayName.includes('Color)')) continue;
 
         const series = cells[3]?.replace(/bgcolor=".*"\|/, '').replace(/\[\[|\]\]/g, '').split('|').pop() || "2026 Mainline";
-        const seriesNumber = cells[4]?.trim();
         const fileMatch = cells[5]?.match(/File:([^|\]]+)/);
         const fileName = fileMatch ? fileMatch[1] : null;
 
-        parsedCars.push({
-          name: displayName,
-          year: "2026",
-          series,
-          fullTitle,
-          fileName,
-          collectorNumber,
-          seriesNumber
-        });
+        // If it's a real car image filename, use it
+        if (fileName && fileName !== "Image Not Available.jpg") {
+          parsedCars.push({
+            name: displayName,
+            year: "2026",
+            series,
+            fullTitle,
+            fileName,
+            collectorNumber
+          });
+        }
         if (parsedCars.length >= 80) break;
       }
 
-      // Step 3: Direct API Image Resolution
+      // Step 3: Exact Filename Resolution
       const finalCars: WikiCar[] = [];
-      const batchSize = 25;
+      const batchSize = 40;
 
       for (let i = 0; i < parsedCars.length; i += batchSize) {
         const batch = parsedCars.slice(i, i + batchSize);
-        
-        // Strategy: Query both the File: titles AND Page titles to ensure we get an image
-        const titles = [
-            ...batch.filter(c => c.fileName).map(c => `File:${c.fileName}`),
-            ...batch.filter(c => !c.fileName && c.fullTitle).map(c => c.fullTitle)
-        ].join('|');
-
-        if (!titles) continue;
-
-        const imgRes = await fetch(`https://hotwheels.fandom.com/api.php?action=query&format=json&origin=*&prop=imageinfo|pageimages&iiprop=url&piprop=original&titles=${encodeURIComponent(titles)}`);
+        const titles = batch.map(c => `File:${c.fileName}`).join('|');
+        const imgRes = await fetch(`https://hotwheels.fandom.com/api.php?action=query&format=json&origin=*&prop=imageinfo&iiprop=url&titles=${encodeURIComponent(titles)}`);
         const imgData = await imgRes.json();
         const pages = imgData.query?.pages || {};
 
         batch.forEach(c => {
-          let resolvedUrl = "";
-          
-          // Try to match by File name first (most exact)
-          if (c.fileName) {
-            const filePage: any = Object.values(pages).find((p: any) => p.title.toLowerCase() === `file:${c.fileName?.toLowerCase()}`);
-            resolvedUrl = filePage?.imageinfo?.[0]?.url || filePage?.original?.source || "";
-          }
+          const filePage: any = Object.values(pages).find((p: any) => p.title.toLowerCase() === `file:${c.fileName?.toLowerCase()}`);
+          const resolvedUrl = filePage?.imageinfo?.[0]?.url || "";
 
-          // Fallback to matching by Page title
-          if (!resolvedUrl && c.fullTitle) {
-            const page: any = Object.values(pages).find((p: any) => p.title.toLowerCase() === c.fullTitle?.toLowerCase());
-            resolvedUrl = page?.original?.source || page?.imageinfo?.[0]?.url || "";
-          }
-
-          // ONLY add if we have a real image, otherwise filter it out to keep the gallery clean
-          if (resolvedUrl && !resolvedUrl.includes('Image_Not_Available')) {
+          if (resolvedUrl) {
             finalCars.push({
               ...c,
               image: resolvedUrl
@@ -109,7 +90,6 @@ export default function DiscoverPage() {
           }
         });
       }
-
       setWikiResults(finalCars);
     } catch (error) {
       console.error("Master list fetch failed:", error);
@@ -183,7 +163,6 @@ export default function DiscoverPage() {
 
   return (
     <main className="pt-32 pb-24 px-6 md:px-12 max-w-[1600px] mx-auto w-full min-h-screen">
-      {/* Header Section */}
       <header className="mb-16 flex flex-col lg:flex-row lg:items-end justify-between gap-10">
         <div className="max-w-2xl">
           <div className="flex items-center gap-3 mb-4">
@@ -212,7 +191,6 @@ export default function DiscoverPage() {
         </div>
       </header>
 
-      {/* Grid Section */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-10">
         {isLoading ? (
           <div className="col-span-full py-40 flex flex-col items-center gap-6">
