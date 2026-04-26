@@ -104,13 +104,13 @@ export const useStore = create<CollectionState>((set, get) => {
         if (!modelsRes.error && modelsRes.data) {
            loadedModels = modelsRes.data;
         } else if (modelsRes.error) {
-           console.error("Supabase Error (models):", modelsRes.error.message, modelsRes.error.details);
+           console.error("Supabase Error (models):", modelsRes.error);
         }
 
         if (!isoModelsRes.error && isoModelsRes.data) {
            loadedIsoModels = isoModelsRes.data;
         } else if (isoModelsRes.error) {
-           console.error("Supabase Error (iso_models):", isoModelsRes.error.message, isoModelsRes.error.details);
+           console.error("Supabase Error (iso_models):", isoModelsRes.error);
         }
 
         set({ 
@@ -129,6 +129,7 @@ export const useStore = create<CollectionState>((set, get) => {
       const { user } = get();
       if (!user) {
         console.error("Cannot add model: No user logged in.");
+        toast.error("Please login to add models");
         return;
       }
 
@@ -145,6 +146,7 @@ export const useStore = create<CollectionState>((set, get) => {
         
         if (error) {
           console.error("Supabase error adding model:", error);
+          toast.error(`Error: ${error.message}`);
         } else if (data && data.length > 0) {
           console.log("Model added successfully:", data[0]);
           set((state) => ({ models: [data[0], ...state.models] }));
@@ -211,6 +213,7 @@ export const useStore = create<CollectionState>((set, get) => {
         
         if (error) {
           console.error("Supabase error adding ISO model:", error);
+          toast.error(`Error: ${error.message}`);
         } else if (data && data.length > 0) {
           console.log("ISO model added successfully:", data[0]);
           set((state) => ({ isoModels: [data[0], ...state.isoModels] }));
