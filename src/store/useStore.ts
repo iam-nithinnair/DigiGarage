@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createClient } from '@/lib/supabase/client';
 import { User } from '@supabase/supabase-js';
+import { toast } from 'sonner';
 
 export interface Model {
   id: string;
@@ -104,13 +105,13 @@ export const useStore = create<CollectionState>((set, get) => {
         if (!modelsRes.error && modelsRes.data) {
            loadedModels = modelsRes.data;
         } else if (modelsRes.error) {
-           console.error("Supabase Error (models):", modelsRes.error);
+           console.error("Supabase Error (models):", modelsRes.error.message, modelsRes.error.code);
         }
 
         if (!isoModelsRes.error && isoModelsRes.data) {
            loadedIsoModels = isoModelsRes.data;
         } else if (isoModelsRes.error) {
-           console.error("Supabase Error (iso_models):", isoModelsRes.error);
+           console.error("Supabase Error (iso_models):", isoModelsRes.error.message, isoModelsRes.error.code);
         }
 
         set({ 
@@ -135,8 +136,18 @@ export const useStore = create<CollectionState>((set, get) => {
 
       const supabase = getSupabase();
       try {
+        // Explicitly map fields to avoid sending unknown columns to Supabase
         const newRecord = { 
-          ...model, 
+          name: model.name,
+          year: model.year,
+          manufacturer: model.manufacturer,
+          series: model.series,
+          scale: model.scale,
+          image: model.image,
+          purchase_price: model.purchase_price,
+          condition: model.condition,
+          grade: model.grade,
+          storage_location: model.storage_location,
           user_id: user.id,
           isFavorite: false 
         };
@@ -145,8 +156,8 @@ export const useStore = create<CollectionState>((set, get) => {
         const { data, error } = await supabase.from('models').insert([newRecord]).select();
         
         if (error) {
-          console.error("Supabase error adding model:", error);
-          toast.error(`Error: ${error.message}`);
+          console.error("Supabase error adding model:", error.message, error.code, error.details);
+          toast.error(`Database Error: ${error.message}`);
         } else if (data && data.length > 0) {
           console.log("Model added successfully:", data[0]);
           set((state) => ({ models: [data[0], ...state.models] }));
@@ -162,7 +173,7 @@ export const useStore = create<CollectionState>((set, get) => {
       try {
         const { error } = await supabase.from('models').delete().eq('id', id);
         if (error) {
-          console.error("Failed to remove model:", error);
+          console.error("Failed to remove model:", error.message);
         } else {
           set((state) => ({ models: state.models.filter(m => m.id !== id) }));
         }
@@ -189,7 +200,7 @@ export const useStore = create<CollectionState>((set, get) => {
       try {
         const { error } = await supabase.from('models').update({ isFavorite: newFavState }).eq('id', id);
         if (error) {
-          console.error("Error toggling favorite:", error);
+          console.error("Error toggling favorite:", error.message);
           set((state) => ({
             models: state.models.map(m => m.id === id ? { ...m, isFavorite: !newFavState } : m)
           }));
@@ -207,13 +218,18 @@ export const useStore = create<CollectionState>((set, get) => {
 
       const supabase = getSupabase();
       try {
-        const newRecord = { ...model, user_id: user.id };
+        const newRecord = { 
+          name: model.name,
+          targetPrice: model.targetPrice,
+          rarity: model.rarity,
+          user_id: user.id 
+        };
         console.log("Attempting to insert ISO model:", newRecord);
         const { data, error } = await supabase.from('iso_models').insert([newRecord]).select();
         
         if (error) {
-          console.error("Supabase error adding ISO model:", error);
-          toast.error(`Error: ${error.message}`);
+          console.error("Supabase error adding ISO model:", error.message, error.code);
+          toast.error(`Database Error: ${error.message}`);
         } else if (data && data.length > 0) {
           console.log("ISO model added successfully:", data[0]);
           set((state) => ({ isoModels: [data[0], ...state.isoModels] }));
@@ -228,10 +244,10 @@ export const useStore = create<CollectionState>((set, get) => {
       const supabase = getSupabase();
       try {
         const { error } = await supabase.from('iso_models').delete().eq('id', id);
-        if (!error) {
-          set((state) => ({ isoModels: state.isoModels.filter(m => m.id !== id) }));
+        if (error) {
+          console.error("Failed to remove ISO model from Supabase:", error.message);
         } else {
-          console.error("Failed to remove ISO model from Supabase:", error);
+          set((state) => ({ isoModels: state.isoModels.filter(m => m.id !== id) }));
         }
       } catch (e) {
         console.error(e);
