@@ -29,6 +29,7 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${inter.variable} ${spaceGrotesk.variable} h-full antialiased dark`}
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-surface-dim text-on-surface selection:bg-primary-container selection:text-white font-body">
         <TopNavBar />
