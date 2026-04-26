@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useStore } from "@/store/useStore";
-
-import { Search, Plus, Sparkles, CheckCircle2, Loader2, Globe, Database, ChevronDown, X, Info, Hash, AlertTriangle, ExternalLink } from "lucide-react";
+import { Search, Plus, Sparkles, CheckCircle2, Loader2, Globe, Database, ChevronDown, X, Info, Hash, AlertTriangle, Calendar, Layers } from "lucide-react";
 import { toast } from "sonner";
 
 interface WikiCar {
@@ -11,9 +10,11 @@ interface WikiCar {
   year: string;
   series: string;
   image: string;
+  highResImage?: string;
   collectorNumber?: string;
   seriesNumber?: string;
   fullTitle?: string;
+  fileName?: string;
 }
 
 export default function DiscoverPage() {
@@ -24,7 +25,6 @@ export default function DiscoverPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedModel, setSelectedModel] = useState<WikiCar | null>(null);
 
-  // Core parsing logic for the 2026 Master List
   const fetch2026MasterList = async () => {
     setIsLoading(true);
     try {
@@ -51,10 +51,10 @@ export default function DiscoverPage() {
 
         const rawSeries = cells[3]?.replace(/bgcolor=".*"\|/, '').replace(/\[\[|\]\]/g, '').split('|').pop() || "2026 Mainline";
         const series = rawSeries.replace(/<[^>]*>/g, '').replace(/\{\{[^}]*\}\}/g, '').trim();
+        const seriesNumber = cells[4]?.trim();
         const fileMatch = cells[5]?.match(/File:([^|\]]+)/);
         const fileName = fileMatch ? fileMatch[1] : null;
 
-        // If it's a real car image filename, use it
         if (fileName && fileName !== "Image Not Available.jpg") {
           parsedCars.push({
             name: displayName,
@@ -62,31 +62,34 @@ export default function DiscoverPage() {
             series,
             fullTitle,
             fileName,
-            collectorNumber
+            collectorNumber,
+            seriesNumber
           });
         }
         if (parsedCars.length >= 80) break;
       }
 
-      // Step 3: Exact Filename Resolution
       const finalCars: WikiCar[] = [];
       const batchSize = 40;
 
       for (let i = 0; i < parsedCars.length; i += batchSize) {
         const batch = parsedCars.slice(i, i + batchSize);
         const titles = batch.map(c => `File:${c.fileName}`).join('|');
-        const imgRes = await fetch(`https://hotwheels.fandom.com/api.php?action=query&format=json&origin=*&prop=imageinfo&iiprop=url&titles=${encodeURIComponent(titles)}`);
+        // Query both thumbnail and original
+        const imgRes = await fetch(`https://hotwheels.fandom.com/api.php?action=query&format=json&origin=*&prop=imageinfo&iiprop=url|thumburl&iiurlwidth=400&titles=${encodeURIComponent(titles)}`);
         const imgData = await imgRes.json();
         const pages = imgData.query?.pages || {};
 
         batch.forEach(c => {
           const filePage: any = Object.values(pages).find((p: any) => p.title.toLowerCase() === `file:${c.fileName?.toLowerCase()}`);
-          const resolvedUrl = filePage?.imageinfo?.[0]?.url || "";
+          const thumbUrl = filePage?.imageinfo?.[0]?.thumburl || "";
+          const originalUrl = filePage?.imageinfo?.[0]?.url || "";
 
-          if (resolvedUrl) {
+          if (thumbUrl || originalUrl) {
             finalCars.push({
               ...c,
-              image: resolvedUrl
+              image: thumbUrl || originalUrl, // Use thumb for gallery
+              highResImage: originalUrl || thumbUrl // Use original for modal
             });
           }
         });
@@ -103,19 +106,20 @@ export default function DiscoverPage() {
     setIsLoading(true);
     try {
       const response = await fetch(
-        `https://hotwheels.fandom.com/api.php?action=query&format=json&origin=*&prop=pageimages|extracts&exintro&explaintext&exchars=200&generator=search&piprop=original&gsrlimit=40&gsrsearch=${encodeURIComponent(query)}`
+        `https://hotwheels.fandom.com/api.php?action=query&format=json&origin=*&prop=pageimages|extracts&exintro&explaintext&exchars=200&generator=search&piprop=thumbnail|original&pithumbsize=400&gsrlimit=40&gsrsearch=${encodeURIComponent(query)}`
       );
       const data = await response.json();
       
       if (data.query?.pages) {
         const results: WikiCar[] = Object.values(data.query.pages)
           .sort((a: any, b: any) => a.index - b.index)
-          .filter((page: any) => page.original?.source && !page.original.source.includes('Image_Not_Available'))
+          .filter((page: any) => page.thumbnail || page.original)
           .map((page: any) => ({
             name: page.title,
             year: "N/A",
             series: "Global Archive",
-            image: page.original.source,
+            image: page.thumbnail?.source || page.original?.source,
+            highResImage: page.original?.source || page.thumbnail?.source
           }));
         setWikiResults(results);
       } else {
@@ -150,6 +154,7 @@ export default function DiscoverPage() {
     try {
       await addModel({
         ...model,
+        image: model.highResImage || model.image, // Store high res in collection
         manufacturer: "Hot Wheels",
         scale: "1:64",
       });
@@ -164,6 +169,7 @@ export default function DiscoverPage() {
 
   return (
     <main className="pt-32 pb-24 px-6 md:px-12 max-w-[1600px] mx-auto w-full min-h-screen">
+      {/* Header Section */}
       <header className="mb-16 flex flex-col lg:flex-row lg:items-end justify-between gap-10">
         <div className="max-w-2xl">
           <div className="flex items-center gap-3 mb-4">
@@ -174,7 +180,7 @@ export default function DiscoverPage() {
             Product <span className="text-primary-container">Showroom</span>
           </h1>
           <p className="text-on-surface-variant/70 leading-relaxed max-w-lg text-lg">
-            Cataloging every unique 2026 casting with official prototype captures. No placeholders, just pure engineering.
+            Directly from the 2026 master list. Explore exact castings with refined technical details and hi-res inspection.
           </p>
         </div>
 
@@ -183,7 +189,7 @@ export default function DiscoverPage() {
           <input 
             type="text"
             autoFocus
-            aria-label="Search Hot Wheels castings from global archive"
+            aria-label="Search global Hot Wheels archive"
             placeholder="Search archive (e.g. Twin Mill, Skyline)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -192,11 +198,12 @@ export default function DiscoverPage() {
         </div>
       </header>
 
+      {/* Grid Section */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-10">
         {isLoading ? (
           <div className="col-span-full py-40 flex flex-col items-center gap-6">
             <Loader2 className="animate-spin text-primary-container" size={64} />
-            <p className="font-label text-sm uppercase tracking-[0.3em] text-on-surface/40 animate-pulse">Synchronizing Hi-Res Catalog...</p>
+            <p className="font-label text-sm uppercase tracking-[0.3em] text-on-surface/40 animate-pulse">Syncing Hi-Res Catalog...</p>
           </div>
         ) : wikiResults.map((item, index) => {
           const inCollection = isAlreadyInCollection(item.name);
@@ -209,6 +216,7 @@ export default function DiscoverPage() {
               className="bg-surface-container-low group hover:bg-surface-container transition-all duration-500 border border-white/5 relative overflow-hidden flex flex-col cursor-pointer shadow-lg hover:shadow-primary/5"
             >
               <div className="aspect-[4/3] relative overflow-hidden bg-[#050505] flex items-center justify-center">
+                {/* Gallery uses low-res thumb for performance */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img 
                   alt={item.name}
@@ -234,9 +242,18 @@ export default function DiscoverPage() {
               </div>
 
               <div className="p-6 flex-grow flex flex-col border-t border-white/5">
-                <div className="flex justify-between items-start mb-2">
-                  <span className="font-label text-[9px] tracking-[0.2em] text-primary uppercase font-bold truncate pr-4">{item.series}</span>
+                {/* Enhanced Metadata on Card */}
+                <div className="flex flex-col gap-3 mb-4">
+                  <div className="flex items-center gap-2 text-primary">
+                    <Layers size={12} />
+                    <span className="font-label text-[9px] tracking-[0.2em] uppercase font-bold truncate">{item.series}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-on-surface/40">
+                    <Calendar size={12} />
+                    <span className="font-label text-[9px] tracking-widest uppercase font-bold">{item.year}</span>
+                  </div>
                 </div>
+
                 <h3 className="font-headline text-lg font-black text-on-surface uppercase mb-6 line-clamp-2 min-h-[3rem] leading-[1.1] group-hover:text-primary transition-colors">{item.name}</h3>
                 
                 <div className="mt-auto pt-4">
@@ -277,10 +294,11 @@ export default function DiscoverPage() {
           <div className="absolute inset-0 bg-background/98 backdrop-blur-2xl" onClick={() => setSelectedModel(null)}></div>
           <div className="relative w-full max-w-6xl bg-surface-container-low border border-white/10 shadow-2xl flex flex-col md:flex-row overflow-hidden rounded-[2.5rem] animate-in fade-in slide-in-from-bottom-12 duration-700">
             <div className="w-full md:w-[60%] aspect-square relative bg-[#020202] flex items-center justify-center p-16 group/img">
+              {/* Modal uses High-Res original image */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
                 alt={selectedModel.name}
-                src={selectedModel.image}
+                src={selectedModel.highResImage || selectedModel.image}
                 referrerPolicy="no-referrer"
                 className="absolute inset-0 w-full h-full object-contain p-12 transition-transform duration-1000 group-hover/img:scale-105"
               />
@@ -304,6 +322,12 @@ export default function DiscoverPage() {
                    <div className="space-y-1">
                       <span className="font-label text-[11px] uppercase tracking-[0.2em] text-on-surface/30 font-bold">Collector Sequence</span>
                       <p className="font-headline text-5xl font-black text-on-surface italic">{selectedModel.collectorNumber || 'TBD'}<span className="text-on-surface/20 not-italic ml-3 text-3xl">/ 250</span></p>
+                   </div>
+                </div>
+                <div className="flex items-center justify-between border-b border-white/5 pb-8">
+                   <div className="space-y-1">
+                      <span className="font-label text-[11px] uppercase tracking-[0.2em] text-on-surface/30 font-bold">Release Year</span>
+                      <p className="font-headline text-5xl font-black text-on-surface italic">{selectedModel.year}</p>
                    </div>
                 </div>
               </div>
