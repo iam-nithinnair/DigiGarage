@@ -14,7 +14,6 @@ interface WikiCar {
   collectorNumber?: string;
   seriesNumber?: string;
   fullTitle?: string;
-  fileName?: string;
 }
 
 export default function DiscoverPage() {
@@ -25,16 +24,7 @@ export default function DiscoverPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedModel, setSelectedModel] = useState<WikiCar | null>(null);
 
-  // Helper to handle image fallback and proper Wikia URL formatting
-  const handleImageError = (e: any, item: WikiCar) => {
-    // If it's a common 404, we try to use a more generic search-based thumbnail
-    const target = e.target as HTMLImageElement;
-    if (target.src.includes('MazdaChimera.jpg')) {
-        target.src = "https://static.wikia.nocookie.net/hotwheels/images/a/a2/Nissan_Skyline_GT-R_%28R34%29_Blue_2024.jpg";
-    }
-  };
-
-  // Core parsing logic for the 2026 Master List with Deep Image Resolution
+  // Core parsing logic for the 2026 Master List
   const fetch2026MasterList = async () => {
     setIsLoading(true);
     try {
@@ -69,31 +59,49 @@ export default function DiscoverPage() {
           year: "2026",
           series,
           fullTitle,
-          fileName: (fileName && fileName !== "Image Not Available.jpg") ? fileName : null,
+          fileName,
           collectorNumber,
           seriesNumber
         });
         if (parsedCars.length >= 80) break;
       }
 
-      // Step 3: Direct API Image Resolution (This is more reliable than manual CDN guessing)
+      // Step 3: Direct API Image Resolution
       const finalCars: WikiCar[] = [];
-      const batchSize = 40;
+      const batchSize = 25;
 
       for (let i = 0; i < parsedCars.length; i += batchSize) {
         const batch = parsedCars.slice(i, i + batchSize);
         
-        // Strategy: Query pageimages for ALL titles to get the most "current" thumbnail URL
-        const titles = batch.map(c => c.fullTitle || c.name).join('|');
-        const imgRes = await fetch(`https://hotwheels.fandom.com/api.php?action=query&format=json&origin=*&prop=pageimages&piprop=thumbnail&pithumbsize=1000&titles=${encodeURIComponent(titles)}`);
+        // Strategy: Query both the File: titles AND Page titles to ensure we get an image
+        const titles = [
+            ...batch.filter(c => c.fileName).map(c => `File:${c.fileName}`),
+            ...batch.filter(c => !c.fileName && c.fullTitle).map(c => c.fullTitle)
+        ].join('|');
+
+        if (!titles) continue;
+
+        const imgRes = await fetch(`https://hotwheels.fandom.com/api.php?action=query&format=json&origin=*&prop=imageinfo|pageimages&iiprop=url&piprop=original&titles=${encodeURIComponent(titles)}`);
         const imgData = await imgRes.json();
         const pages = imgData.query?.pages || {};
 
         batch.forEach(c => {
-          const page: any = Object.values(pages).find((p: any) => p.title === c.fullTitle || p.title === c.name);
-          const resolvedUrl = page?.thumbnail?.source || "";
+          let resolvedUrl = "";
+          
+          // Try to match by File name first (most exact)
+          if (c.fileName) {
+            const filePage: any = Object.values(pages).find((p: any) => p.title.toLowerCase() === `file:${c.fileName?.toLowerCase()}`);
+            resolvedUrl = filePage?.imageinfo?.[0]?.url || filePage?.original?.source || "";
+          }
 
-          if (resolvedUrl) {
+          // Fallback to matching by Page title
+          if (!resolvedUrl && c.fullTitle) {
+            const page: any = Object.values(pages).find((p: any) => p.title.toLowerCase() === c.fullTitle?.toLowerCase());
+            resolvedUrl = page?.original?.source || page?.imageinfo?.[0]?.url || "";
+          }
+
+          // ONLY add if we have a real image, otherwise filter it out to keep the gallery clean
+          if (resolvedUrl && !resolvedUrl.includes('Image_Not_Available')) {
             finalCars.push({
               ...c,
               image: resolvedUrl
@@ -114,19 +122,19 @@ export default function DiscoverPage() {
     setIsLoading(true);
     try {
       const response = await fetch(
-        `https://hotwheels.fandom.com/api.php?action=query&format=json&origin=*&prop=pageimages|extracts&exintro&explaintext&exchars=200&generator=search&piprop=thumbnail&pithumbsize=1000&gsrlimit=40&gsrsearch=${encodeURIComponent(query)}`
+        `https://hotwheels.fandom.com/api.php?action=query&format=json&origin=*&prop=pageimages|extracts&exintro&explaintext&exchars=200&generator=search&piprop=original&gsrlimit=40&gsrsearch=${encodeURIComponent(query)}`
       );
       const data = await response.json();
       
       if (data.query?.pages) {
         const results: WikiCar[] = Object.values(data.query.pages)
           .sort((a: any, b: any) => a.index - b.index)
-          .filter((page: any) => page.thumbnail)
+          .filter((page: any) => page.original?.source && !page.original.source.includes('Image_Not_Available'))
           .map((page: any) => ({
             name: page.title,
             year: "N/A",
             series: "Global Archive",
-            image: page.thumbnail.source,
+            image: page.original.source,
           }));
         setWikiResults(results);
       } else {
@@ -180,13 +188,13 @@ export default function DiscoverPage() {
         <div className="max-w-2xl">
           <div className="flex items-center gap-3 mb-4">
             <Sparkles className="text-primary-container" size={20} />
-            <span className="font-label text-[10px] uppercase tracking-[0.2em] text-primary">2026 Verified Catalog</span>
+            <span className="font-label text-[10px] uppercase tracking-[0.2em] text-primary">2026 Digital Archive</span>
           </div>
           <h1 className="font-headline text-5xl md:text-8xl font-bold tracking-tighter text-on-surface mb-6 uppercase">
-            Live <span className="text-primary-container">Castings</span>
+            Product <span className="text-primary-container">Showroom</span>
           </h1>
           <p className="text-on-surface-variant/70 leading-relaxed max-w-lg text-lg">
-            High-fidelity product captures resolved directly from the 2026 mainline master list.
+            Cataloging every unique 2026 casting with official prototype captures. No placeholders, just pure engineering.
           </p>
         </div>
 
@@ -194,7 +202,8 @@ export default function DiscoverPage() {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface/40 group-focus-within:text-primary transition-colors" size={20} />
           <input 
             type="text"
-            aria-label="Search global Hot Wheels archive"
+            autoFocus
+            aria-label="Search Hot Wheels castings from global archive"
             placeholder="Search archive (e.g. Twin Mill, Skyline)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -204,11 +213,11 @@ export default function DiscoverPage() {
       </header>
 
       {/* Grid Section */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-10">
         {isLoading ? (
           <div className="col-span-full py-40 flex flex-col items-center gap-6">
             <Loader2 className="animate-spin text-primary-container" size={64} />
-            <p className="font-label text-sm uppercase tracking-[0.3em] text-on-surface/40 animate-pulse">Syncing Visual Archive...</p>
+            <p className="font-label text-sm uppercase tracking-[0.3em] text-on-surface/40 animate-pulse">Synchronizing Hi-Res Catalog...</p>
           </div>
         ) : wikiResults.map((item, index) => {
           const inCollection = isAlreadyInCollection(item.name);
@@ -218,18 +227,17 @@ export default function DiscoverPage() {
             <article 
               key={index}
               onClick={() => setSelectedModel(item)}
-              className="bg-surface-container-low group hover:bg-surface-container transition-all duration-500 border border-white/5 relative overflow-hidden flex flex-col cursor-pointer shadow-lg"
+              className="bg-surface-container-low group hover:bg-surface-container transition-all duration-500 border border-white/5 relative overflow-hidden flex flex-col cursor-pointer shadow-lg hover:shadow-primary/5"
             >
-              <div className="aspect-[4/3] relative overflow-hidden bg-[#0a0a0a] flex items-center justify-center p-6">
+              <div className="aspect-[4/3] relative overflow-hidden bg-[#050505] flex items-center justify-center">
                 <Image 
                   fill
                   unoptimized
                   alt={item.name}
                   src={item.image}
-                  className="object-contain p-4 opacity-95 group-hover:scale-110 group-hover:opacity-100 transition-all duration-700"
-                  onError={(e) => handleImageError(e, item)}
+                  className="object-contain p-4 transition-transform duration-700 group-hover:scale-110"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent opacity-60"></div>
                 
                 {inCollection && (
                   <div className="absolute top-4 left-4 bg-primary-container/90 backdrop-blur-md text-white px-3 py-1 rounded-full flex items-center gap-1.5 shadow-xl z-20">
@@ -239,7 +247,7 @@ export default function DiscoverPage() {
                 )}
                 
                 {item.collectorNumber && (
-                   <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-on-surface/60 font-headline text-[10px] font-bold px-2 py-1 z-20 border border-white/5">
+                   <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-on-surface/60 font-headline text-[10px] font-bold px-2 py-1 z-20 border border-white/5 tracking-widest">
                      #{item.collectorNumber}
                    </div>
                 )}
@@ -247,89 +255,93 @@ export default function DiscoverPage() {
 
               <div className="p-6 flex-grow flex flex-col border-t border-white/5">
                 <div className="flex justify-between items-start mb-2">
-                  <span className="font-label text-[9px] tracking-widest text-primary-container uppercase font-bold truncate pr-4">{item.series}</span>
-                  <span className="font-label text-[9px] tracking-widest text-on-surface/40 uppercase font-bold">{item.year}</span>
+                  <span className="font-label text-[9px] tracking-[0.2em] text-primary uppercase font-bold truncate pr-4">{item.series}</span>
                 </div>
-                <h3 className="font-headline text-lg font-bold text-on-surface uppercase mb-6 line-clamp-2 min-h-[3.5rem] leading-tight group-hover:text-primary transition-colors">{item.name}</h3>
+                <h3 className="font-headline text-lg font-black text-on-surface uppercase mb-6 line-clamp-2 min-h-[3rem] leading-[1.1] group-hover:text-primary transition-colors">{item.name}</h3>
                 
-                <div className="mt-auto">
+                <div className="mt-auto pt-4">
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();
                       handleAdd(item);
                     }}
                     disabled={inCollection || isAdding || !user}
-                    className={`w-full py-3 flex items-center justify-center gap-2 font-headline text-[10px] font-bold tracking-widest uppercase transition-all duration-300
+                    className={`w-full py-3 flex items-center justify-center gap-2 font-headline text-[9px] font-black tracking-[0.2em] uppercase transition-all duration-300
                       ${inCollection 
                         ? 'bg-surface-container-highest text-on-surface/30 cursor-default' 
-                        : 'bg-primary-container text-on-primary-container hover:bg-primary hover:text-white active:scale-95 shadow-lg'
+                        : 'bg-primary-container text-on-primary-container hover:bg-white hover:text-black active:scale-95'
                       }
-                      ${!user ? 'opacity-50 cursor-not-allowed' : ''}
                     `}
                   >
-                    {isAdding ? <Loader2 size={14} className="animate-spin" /> : inCollection ? 'Secured' : <><Plus size={14} /> Acquire</>}
+                    {isAdding ? <Loader2 size={12} className="animate-spin" /> : inCollection ? 'Cataloged' : <><Plus size={12} /> Acquire</>}
                   </button>
                 </div>
               </div>
             </article>
           );
         })}
+
+        {!isLoading && wikiResults.length === 0 && (
+          <div className="col-span-full py-40 text-center bg-surface-container-low/50 border border-dashed border-white/10 rounded-3xl">
+            <div className="flex flex-col items-center gap-4">
+              <AlertTriangle className="text-on-surface/10" size={64} />
+              <p className="text-on-surface/40 font-body italic text-xl max-w-sm mx-auto">No exact casting images found in this sector.</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Model Detail Modal */}
       {selectedModel && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-          <div className="absolute inset-0 bg-background/95 backdrop-blur-xl" onClick={() => setSelectedModel(null)}></div>
-          <div className="relative w-full max-w-5xl bg-surface-container-low border border-white/10 shadow-2xl flex flex-col md:flex-row overflow-hidden rounded-3xl animate-in fade-in slide-in-from-bottom-8 duration-500">
-            <div className="w-full md:w-[55%] aspect-square relative bg-[#050505] flex items-center justify-center p-12 group/img">
+          <div className="absolute inset-0 bg-background/98 backdrop-blur-2xl" onClick={() => setSelectedModel(null)}></div>
+          <div className="relative w-full max-w-6xl bg-surface-container-low border border-white/10 shadow-2xl flex flex-col md:flex-row overflow-hidden rounded-[2.5rem] animate-in fade-in slide-in-from-bottom-12 duration-700">
+            <div className="w-full md:w-[60%] aspect-square relative bg-[#020202] flex items-center justify-center p-16 group/img">
               <Image 
                 fill
                 unoptimized
                 alt={selectedModel.name}
                 src={selectedModel.image}
-                className="object-contain p-12 transition-transform duration-700 group-hover/img:scale-105"
-                onError={(e) => handleImageError(e, selectedModel)}
+                className="object-contain p-12 transition-transform duration-1000 group-hover/img:scale-105"
               />
             </div>
-            <div className="w-full md:w-[45%] p-10 md:p-16 flex flex-col border-l border-white/5 bg-gradient-to-br from-surface-container-low to-background">
-              <div className="flex justify-between items-start mb-12">
+            <div className="w-full md:w-[40%] p-10 md:p-16 flex flex-col border-l border-white/5 bg-gradient-to-br from-surface-container-low to-background">
+              <div className="flex justify-between items-start mb-16">
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <div className="h-[1px] w-8 bg-primary"></div>
-                    <span className="font-label text-[10px] uppercase tracking-[0.4em] text-primary font-bold">{selectedModel.series}</span>
+                    <div className="h-[2px] w-12 bg-primary"></div>
+                    <span className="font-label text-[11px] uppercase tracking-[0.5em] text-primary font-black">{selectedModel.series}</span>
                   </div>
-                  <h2 className="font-headline text-5xl font-black text-on-surface tracking-tighter uppercase leading-[0.9]">{selectedModel.name}</h2>
+                  <h2 className="font-headline text-6xl font-black text-on-surface tracking-tighter uppercase leading-[0.85]">{selectedModel.name}</h2>
                 </div>
-                <button onClick={() => setSelectedModel(null)} className="p-2 hover:bg-surface-bright rounded-full transition-all text-on-surface/20 hover:text-on-surface">
-                  <X size={28} />
+                <button onClick={() => setSelectedModel(null)} className="p-3 hover:bg-surface-bright rounded-full transition-all text-on-surface/20 hover:text-on-surface">
+                  <X size={32} />
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 gap-10 mb-16">
-                <div className="flex items-center justify-between border-b border-white/5 pb-6">
+              <div className="grid grid-cols-1 gap-12 mb-16">
+                <div className="flex items-center justify-between border-b border-white/5 pb-8">
                    <div className="space-y-1">
-                      <span className="font-label text-[10px] uppercase tracking-widest text-on-surface/30">Collector Number</span>
-                      <p className="font-headline text-4xl font-bold text-on-surface italic">{selectedModel.collectorNumber || 'TBD'}<span className="text-on-surface/20 not-italic ml-2">/ 250</span></p>
-                   </div>
-                   <div className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center">
-                      <Hash size={20} className="text-primary-container" />
+                      <span className="font-label text-[11px] uppercase tracking-[0.2em] text-on-surface/30 font-bold">Collector Sequence</span>
+                      <p className="font-headline text-5xl font-black text-on-surface italic">{selectedModel.collectorNumber || 'TBD'}<span className="text-on-surface/20 not-italic ml-3 text-3xl">/ 250</span></p>
                    </div>
                 </div>
               </div>
 
-              <div className="mt-auto space-y-6">
+              <div className="mt-auto space-y-8">
                 <button 
                   onClick={() => handleAdd(selectedModel)}
                   disabled={isAlreadyInCollection(selectedModel.name) || addingId === selectedModel.name || !user}
-                  className={`w-full py-6 flex items-center justify-center gap-4 font-headline text-sm font-black tracking-[0.3em] uppercase transition-all duration-500
+                  className={`w-full py-8 flex items-center justify-center gap-6 font-headline text-sm font-black tracking-[0.4em] uppercase transition-all duration-700
                     ${isAlreadyInCollection(selectedModel.name) 
                       ? 'bg-surface-container-highest text-on-surface/30 cursor-default' 
-                      : 'bg-primary-container text-on-primary-container hover:bg-white hover:text-black active:scale-[0.98] shadow-2xl'
+                      : 'bg-primary-container text-on-primary-container hover:bg-white hover:text-black active:scale-[0.97] shadow-2xl'
                     }
                   `}
                 >
-                  {addingId === selectedModel.name ? <Loader2 size={20} className="animate-spin" /> : isAlreadyInCollection(selectedModel.name) ? 'Already Cataloged' : <><Plus size={20} /> Secure Acquisition</>}
+                  {addingId === selectedModel.name ? <Loader2 size={24} className="animate-spin" /> : isAlreadyInCollection(selectedModel.name) ? 'Secured in Vault' : <><Plus size={24} /> Acquire Casting</>}
                 </button>
+                <p className="text-center text-[10px] font-label uppercase tracking-[0.3em] text-on-surface/10 font-bold italic">Official Mattel 2026 Reference Documentation</p>
               </div>
             </div>
           </div>
