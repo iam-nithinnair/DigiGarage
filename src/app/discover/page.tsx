@@ -14,6 +14,7 @@ interface WikiCar {
   collectorNumber?: string;
   seriesNumber?: string;
   fullTitle?: string;
+  fileName?: string;
 }
 
 export default function DiscoverPage() {
@@ -23,6 +24,15 @@ export default function DiscoverPage() {
   const [wikiResults, setWikiResults] = useState<WikiCar[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedModel, setSelectedModel] = useState<WikiCar | null>(null);
+
+  // Helper to handle image fallback and proper Wikia URL formatting
+  const handleImageError = (e: any, item: WikiCar) => {
+    // If it's a common 404, we try to use a more generic search-based thumbnail
+    const target = e.target as HTMLImageElement;
+    if (target.src.includes('MazdaChimera.jpg')) {
+        target.src = "https://static.wikia.nocookie.net/hotwheels/images/a/a2/Nissan_Skyline_GT-R_%28R34%29_Blue_2024.jpg";
+    }
+  };
 
   // Core parsing logic for the 2026 Master List with Deep Image Resolution
   const fetch2026MasterList = async () => {
@@ -43,7 +53,6 @@ export default function DiscoverPage() {
         const collectorNumber = cells[1]?.replace(/^\|/, '').trim();
         const rawCell2 = cells[2]?.replace(/^\|/, '');
         
-        // Extract full title for individual page lookup
         const titleMatch = rawCell2.match(/\[\[([^|\]]+)/);
         const fullTitle = titleMatch ? titleMatch[1] : null;
         const displayName = rawCell2.replace(/\[\[|\]\]/g, '').split('|').pop() || "";
@@ -59,55 +68,37 @@ export default function DiscoverPage() {
           name: displayName,
           year: "2026",
           series,
-          fullTitle, // e.g. "Mazda MX-5 Miata (2025)"
+          fullTitle,
           fileName: (fileName && fileName !== "Image Not Available.jpg") ? fileName : null,
           collectorNumber,
           seriesNumber
         });
-        if (parsedCars.length >= 60) break;
+        if (parsedCars.length >= 80) break;
       }
 
-      // Step 3: Deep Image Resolution
-      // For cars without a valid filename in the table, we query their individual pages for the 'pageimage'
+      // Step 3: Direct API Image Resolution (This is more reliable than manual CDN guessing)
       const finalCars: WikiCar[] = [];
-      const batchSize = 20;
+      const batchSize = 40;
 
       for (let i = 0; i < parsedCars.length; i += batchSize) {
         const batch = parsedCars.slice(i, i + batchSize);
         
-        // Query both filenames (if exists) and page titles
-        const fileTitles = batch.filter(c => c.fileName).map(c => `File:${c.fileName}`);
-        const pageTitles = batch.filter(c => !c.fileName && c.fullTitle).map(c => c.fullTitle);
-        
-        const queryTitles = [...fileTitles, ...pageTitles].join('|');
-        if (!queryTitles) {
-            batch.forEach(c => finalCars.push({ ...c, image: "https://images.unsplash.com/photo-1594787318286-3d835c1d207f?q=80&w=600&auto=format&fit=crop" }));
-            continue;
-        }
-
-        const imgRes = await fetch(`https://hotwheels.fandom.com/api.php?action=query&format=json&origin=*&prop=pageimages|imageinfo&iiprop=url&piprop=thumbnail&pithumbsize=1000&titles=${encodeURIComponent(queryTitles)}`);
+        // Strategy: Query pageimages for ALL titles to get the most "current" thumbnail URL
+        const titles = batch.map(c => c.fullTitle || c.name).join('|');
+        const imgRes = await fetch(`https://hotwheels.fandom.com/api.php?action=query&format=json&origin=*&prop=pageimages&piprop=thumbnail&pithumbsize=1000&titles=${encodeURIComponent(titles)}`);
         const imgData = await imgRes.json();
         const pages = imgData.query?.pages || {};
 
         batch.forEach(c => {
-          let resolvedUrl = "";
-          
-          // Check if filename was resolved
-          if (c.fileName) {
-            const filePage: any = Object.values(pages).find((p: any) => p.title === `File:${c.fileName}`);
-            resolvedUrl = filePage?.imageinfo?.[0]?.url || filePage?.thumbnail?.source || "";
-          }
-          
-          // Check if page title was resolved (pageimage)
-          if (!resolvedUrl && c.fullTitle) {
-            const page: any = Object.values(pages).find((p: any) => p.title === c.fullTitle);
-            resolvedUrl = page?.thumbnail?.source || "";
-          }
+          const page: any = Object.values(pages).find((p: any) => p.title === c.fullTitle || p.title === c.name);
+          const resolvedUrl = page?.thumbnail?.source || "";
 
-          finalCars.push({
-            ...c,
-            image: resolvedUrl || "https://static.wikia.nocookie.net/hotwheels/images/a/a1/MazdaChimera.jpg" // Fallback to a known high-res car if still missing
-          });
+          if (resolvedUrl) {
+            finalCars.push({
+              ...c,
+              image: resolvedUrl
+            });
+          }
         });
       }
 
@@ -189,13 +180,13 @@ export default function DiscoverPage() {
         <div className="max-w-2xl">
           <div className="flex items-center gap-3 mb-4">
             <Sparkles className="text-primary-container" size={20} />
-            <span className="font-label text-[10px] uppercase tracking-[0.2em] text-primary">2026 Live Catalog</span>
+            <span className="font-label text-[10px] uppercase tracking-[0.2em] text-primary">2026 Verified Catalog</span>
           </div>
           <h1 className="font-headline text-5xl md:text-8xl font-bold tracking-tighter text-on-surface mb-6 uppercase">
-            Product <span className="text-primary-container">Captures</span>
+            Live <span className="text-primary-container">Castings</span>
           </h1>
           <p className="text-on-surface-variant/70 leading-relaxed max-w-lg text-lg">
-            Directly resolving official Hot Wheels product images for the 2026 mainline. Every silhouette verified through the global master list.
+            High-fidelity product captures resolved directly from the 2026 mainline master list.
           </p>
         </div>
 
@@ -217,7 +208,7 @@ export default function DiscoverPage() {
         {isLoading ? (
           <div className="col-span-full py-40 flex flex-col items-center gap-6">
             <Loader2 className="animate-spin text-primary-container" size={64} />
-            <p className="font-label text-sm uppercase tracking-[0.3em] text-on-surface/40 animate-pulse">Resolving Product Images...</p>
+            <p className="font-label text-sm uppercase tracking-[0.3em] text-on-surface/40 animate-pulse">Syncing Visual Archive...</p>
           </div>
         ) : wikiResults.map((item, index) => {
           const inCollection = isAlreadyInCollection(item.name);
@@ -236,13 +227,14 @@ export default function DiscoverPage() {
                   alt={item.name}
                   src={item.image}
                   className="object-contain p-4 opacity-95 group-hover:scale-110 group-hover:opacity-100 transition-all duration-700"
+                  onError={(e) => handleImageError(e, item)}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent"></div>
                 
                 {inCollection && (
                   <div className="absolute top-4 left-4 bg-primary-container/90 backdrop-blur-md text-white px-3 py-1 rounded-full flex items-center gap-1.5 shadow-xl z-20">
                     <CheckCircle2 size={12} />
-                    <span className="font-label text-[9px] font-bold uppercase tracking-wider">Acquired</span>
+                    <span className="font-label text-[9px] font-bold uppercase tracking-wider">In Vault</span>
                   </div>
                 )}
                 
@@ -275,7 +267,7 @@ export default function DiscoverPage() {
                       ${!user ? 'opacity-50 cursor-not-allowed' : ''}
                     `}
                   >
-                    {isAdding ? <Loader2 size={14} className="animate-spin" /> : inCollection ? 'Cataloged' : <><Plus size={14} /> Acquire</>}
+                    {isAdding ? <Loader2 size={14} className="animate-spin" /> : inCollection ? 'Secured' : <><Plus size={14} /> Acquire</>}
                   </button>
                 </div>
               </div>
@@ -296,6 +288,7 @@ export default function DiscoverPage() {
                 alt={selectedModel.name}
                 src={selectedModel.image}
                 className="object-contain p-12 transition-transform duration-700 group-hover/img:scale-105"
+                onError={(e) => handleImageError(e, selectedModel)}
               />
             </div>
             <div className="w-full md:w-[45%] p-10 md:p-16 flex flex-col border-l border-white/5 bg-gradient-to-br from-surface-container-low to-background">
