@@ -72,8 +72,6 @@ export default function DiscoverPage() {
 
       for (let i = 0; i < parsedCars.length; i += batchSize) {
         const batch = parsedCars.slice(i, i + batchSize);
-        
-        // Strategy: Query both the File: titles AND Page titles to ensure we get an image
         const titles = [
             ...batch.filter(c => c.fileName).map(c => `File:${c.fileName}`),
             ...batch.filter(c => !c.fileName && c.fullTitle).map(c => c.fullTitle)
@@ -87,20 +85,14 @@ export default function DiscoverPage() {
 
         batch.forEach(c => {
           let resolvedUrl = "";
-          
-          // Try to match by File name first (most exact)
           if (c.fileName) {
             const filePage: any = Object.values(pages).find((p: any) => p.title.toLowerCase() === `file:${c.fileName?.toLowerCase()}`);
             resolvedUrl = filePage?.imageinfo?.[0]?.url || filePage?.original?.source || "";
           }
-
-          // Fallback to matching by Page title
           if (!resolvedUrl && c.fullTitle) {
             const page: any = Object.values(pages).find((p: any) => p.title.toLowerCase() === c.fullTitle?.toLowerCase());
             resolvedUrl = page?.original?.source || page?.imageinfo?.[0]?.url || "";
           }
-
-          // ONLY add if we have a real image, otherwise filter it out to keep the gallery clean
           if (resolvedUrl && !resolvedUrl.includes('Image_Not_Available')) {
             finalCars.push({
               ...c,
@@ -109,7 +101,6 @@ export default function DiscoverPage() {
           }
         });
       }
-
       setWikiResults(finalCars);
     } catch (error) {
       console.error("Master list fetch failed:", error);
@@ -229,15 +220,15 @@ export default function DiscoverPage() {
               onClick={() => setSelectedModel(item)}
               className="bg-surface-container-low group hover:bg-surface-container transition-all duration-500 border border-white/5 relative overflow-hidden flex flex-col cursor-pointer shadow-lg hover:shadow-primary/5"
             >
-              <div className="aspect-[4/3] relative overflow-hidden bg-[#050505] flex items-center justify-center">
+              {/* Image Container - REMOVED OVERLAY GRADIENT */}
+              <div className="aspect-[4/3] relative overflow-hidden bg-black flex items-center justify-center">
                 <Image 
                   fill
                   unoptimized
                   alt={item.name}
                   src={item.image}
-                  className="object-contain p-4 transition-transform duration-700 group-hover:scale-110"
+                  className="object-contain p-4 transition-transform duration-700 group-hover:scale-110 relative z-10"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent opacity-60"></div>
                 
                 {inCollection && (
                   <div className="absolute top-4 left-4 bg-primary-container/90 backdrop-blur-md text-white px-3 py-1 rounded-full flex items-center gap-1.5 shadow-xl z-20">
@@ -273,7 +264,7 @@ export default function DiscoverPage() {
                       }
                     `}
                   >
-                    {isAdding ? <Loader2 size={12} className="animate-spin" /> : inCollection ? 'Cataloged' : <><Plus size={12} /> Acquire</>}
+                    {isAdding ? <Loader2 size={12} className="animate-spin" /> : inCollection ? 'Secured' : <><Plus size={12} /> Acquire</>}
                   </button>
                 </div>
               </div>
@@ -296,7 +287,7 @@ export default function DiscoverPage() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
           <div className="absolute inset-0 bg-background/98 backdrop-blur-2xl" onClick={() => setSelectedModel(null)}></div>
           <div className="relative w-full max-w-6xl bg-surface-container-low border border-white/10 shadow-2xl flex flex-col md:flex-row overflow-hidden rounded-[2.5rem] animate-in fade-in slide-in-from-bottom-12 duration-700">
-            <div className="w-full md:w-[60%] aspect-square relative bg-[#020202] flex items-center justify-center p-16 group/img">
+            <div className="w-full md:w-[60%] aspect-square relative bg-black flex items-center justify-center p-16 group/img">
               <Image 
                 fill
                 unoptimized
