@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useStore } from "@/store/useStore";
-import { Search, Plus, Sparkles, CheckCircle2, Loader2, Globe, Database, ChevronDown, X, Info, Hash, AlertTriangle, Calendar, Layers } from "lucide-react";
+import { Search, Plus, Sparkles, CheckCircle2, Loader2, Globe, Database, ChevronDown, X, Info, Hash, AlertTriangle, Calendar, Layers, Heart } from "lucide-react";
 import { toast } from "sonner";
 
 interface WikiCar {
@@ -18,7 +18,7 @@ interface WikiCar {
 }
 
 export default function DiscoverPage() {
-  const { addModel, models, user } = useStore();
+  const { addModel, models, user, addISOModel, isoModels } = useStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [addingId, setAddingId] = useState<string | null>(null);
   const [wikiResults, setWikiResults] = useState<WikiCar[]>([]);
@@ -75,7 +75,6 @@ export default function DiscoverPage() {
       for (let i = 0; i < parsedCars.length; i += batchSize) {
         const batch = parsedCars.slice(i, i + batchSize);
         const titles = batch.map(c => `File:${c.fileName}`).join('|');
-        // Query both thumbnail and original
         const imgRes = await fetch(`https://hotwheels.fandom.com/api.php?action=query&format=json&origin=*&prop=imageinfo&iiprop=url|thumburl&iiurlwidth=400&titles=${encodeURIComponent(titles)}`);
         const imgData = await imgRes.json();
         const pages = imgData.query?.pages || {};
@@ -88,8 +87,8 @@ export default function DiscoverPage() {
           if (thumbUrl || originalUrl) {
             finalCars.push({
               ...c,
-              image: thumbUrl || originalUrl, // Use thumb for gallery
-              highResImage: originalUrl || thumbUrl // Use original for modal
+              image: thumbUrl || originalUrl,
+              highResImage: originalUrl || thumbUrl
             });
           }
         });
@@ -145,6 +144,10 @@ export default function DiscoverPage() {
     return models.some(m => m.name.toLowerCase() === name.toLowerCase());
   };
 
+  const isAlreadyInISO = (name: string) => {
+    return isoModels.some(m => m.name.toLowerCase() === name.toLowerCase());
+  };
+
   const handleAdd = async (model: WikiCar) => {
     if (!user) {
       toast.error("Sign in required");
@@ -154,7 +157,7 @@ export default function DiscoverPage() {
     try {
       await addModel({
         ...model,
-        image: model.highResImage || model.image, // Store high res in collection
+        image: model.highResImage || model.image,
         manufacturer: "Hot Wheels",
         scale: "1:64",
       });
@@ -167,9 +170,25 @@ export default function DiscoverPage() {
     }
   };
 
+  const handleAddISO = async (model: WikiCar) => {
+    if (!user) {
+      toast.error("Sign in required");
+      return;
+    }
+    try {
+      await addISOModel({
+        name: model.name,
+        targetPrice: "TBD",
+        rarity: "Standard"
+      });
+      toast.success("Added to Wishlist");
+    } catch (err) {
+      toast.error("Failed to add to Wishlist");
+    }
+  };
+
   return (
     <main className="pt-32 pb-24 px-6 md:px-12 max-w-[1600px] mx-auto w-full min-h-screen">
-      {/* Header Section */}
       <header className="mb-16 flex flex-col lg:flex-row lg:items-end justify-between gap-10">
         <div className="max-w-2xl">
           <div className="flex items-center gap-3 mb-4">
@@ -180,7 +199,7 @@ export default function DiscoverPage() {
             Product <span className="text-primary-container">Showroom</span>
           </h1>
           <p className="text-on-surface-variant/70 leading-relaxed max-w-lg text-lg">
-            Directly from the 2026 master list. Explore exact castings with refined technical details and hi-res inspection.
+            Cataloging every unique 2026 casting with official prototype captures. No placeholders, just pure engineering.
           </p>
         </div>
 
@@ -189,7 +208,7 @@ export default function DiscoverPage() {
           <input 
             type="text"
             autoFocus
-            aria-label="Search global Hot Wheels archive"
+            aria-label="Search Hot Wheels castings from global archive"
             placeholder="Search archive (e.g. Twin Mill, Skyline)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -198,15 +217,15 @@ export default function DiscoverPage() {
         </div>
       </header>
 
-      {/* Grid Section */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-10">
         {isLoading ? (
           <div className="col-span-full py-40 flex flex-col items-center gap-6">
             <Loader2 className="animate-spin text-primary-container" size={64} />
-            <p className="font-label text-sm uppercase tracking-[0.3em] text-on-surface/40 animate-pulse">Syncing Hi-Res Catalog...</p>
+            <p className="font-label text-sm uppercase tracking-[0.3em] text-on-surface/40 animate-pulse">Synchronizing Hi-Res Catalog...</p>
           </div>
         ) : wikiResults.map((item, index) => {
           const inCollection = isAlreadyInCollection(item.name);
+          const inISO = isAlreadyInISO(item.name);
           const isAdding = addingId === item.name;
 
           return (
@@ -216,7 +235,6 @@ export default function DiscoverPage() {
               className="bg-surface-container-low group hover:bg-surface-container transition-all duration-500 border border-white/5 relative overflow-hidden flex flex-col cursor-pointer shadow-lg hover:shadow-primary/5"
             >
               <div className="aspect-[4/3] relative overflow-hidden bg-[#050505] flex items-center justify-center">
-                {/* Gallery uses low-res thumb for performance */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img 
                   alt={item.name}
@@ -233,6 +251,13 @@ export default function DiscoverPage() {
                     <span className="font-label text-[9px] font-bold uppercase tracking-wider">In Vault</span>
                   </div>
                 )}
+
+                {!inCollection && inISO && (
+                  <div className="absolute top-4 left-4 bg-secondary-container/90 backdrop-blur-md text-white px-3 py-1 rounded-full flex items-center gap-1.5 shadow-xl z-20">
+                    <Heart size={12} fill="white" />
+                    <span className="font-label text-[9px] font-bold uppercase tracking-wider">Wishlisted</span>
+                  </div>
+                )}
                 
                 {item.collectorNumber && (
                    <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-on-surface/60 font-headline text-[10px] font-bold px-2 py-1 z-20 border border-white/5 tracking-widest">
@@ -242,7 +267,6 @@ export default function DiscoverPage() {
               </div>
 
               <div className="p-6 flex-grow flex flex-col border-t border-white/5">
-                {/* Enhanced Metadata on Card */}
                 <div className="flex flex-col gap-3 mb-4">
                   <div className="flex items-center gap-2 text-primary">
                     <Layers size={12} />
@@ -256,36 +280,41 @@ export default function DiscoverPage() {
 
                 <h3 className="font-headline text-lg font-black text-on-surface uppercase mb-6 line-clamp-2 min-h-[3rem] leading-[1.1] group-hover:text-primary transition-colors">{item.name}</h3>
                 
-                <div className="mt-auto pt-4">
+                <div className="mt-auto flex gap-2">
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();
                       handleAdd(item);
                     }}
                     disabled={inCollection || isAdding || !user}
-                    className={`w-full py-3 flex items-center justify-center gap-2 font-headline text-[9px] font-black tracking-[0.2em] uppercase transition-all duration-300
+                    className={`flex-grow py-3 flex items-center justify-center gap-2 font-headline text-[9px] font-black tracking-[0.2em] uppercase transition-all duration-300
                       ${inCollection 
                         ? 'bg-surface-container-highest text-on-surface/30 cursor-default' 
                         : 'bg-primary-container text-on-primary-container hover:bg-white hover:text-black active:scale-95'
                       }
                     `}
                   >
-                    {isAdding ? <Loader2 size={12} className="animate-spin" /> : inCollection ? 'Cataloged' : <><Plus size={12} /> Acquire</>}
+                    {isAdding ? <Loader2 size={12} className="animate-spin" /> : inCollection ? 'Secured' : <><Plus size={12} /> Acquire</>}
                   </button>
+
+                  {!inCollection && (
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddISO(item);
+                      }}
+                      disabled={inISO || !user}
+                      title={inISO ? "Already in Wishlist" : "Add to Wishlist"}
+                      className={`p-3 transition-all duration-300 ${inISO ? 'bg-surface-container-highest text-primary/50' : 'bg-surface-container-high text-on-surface/60 hover:text-primary hover:bg-white'}`}
+                    >
+                       <Heart size={16} fill={inISO ? "currentColor" : "none"} />
+                    </button>
+                  )}
                 </div>
               </div>
             </article>
           );
         })}
-
-        {!isLoading && wikiResults.length === 0 && (
-          <div className="col-span-full py-40 text-center bg-surface-container-low/50 border border-dashed border-white/10 rounded-3xl">
-            <div className="flex flex-col items-center gap-4">
-              <AlertTriangle className="text-on-surface/10" size={64} />
-              <p className="text-on-surface/40 font-body italic text-xl max-w-sm mx-auto">No exact casting images found in this sector.</p>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Model Detail Modal */}
@@ -294,7 +323,6 @@ export default function DiscoverPage() {
           <div className="absolute inset-0 bg-background/98 backdrop-blur-2xl" onClick={() => setSelectedModel(null)}></div>
           <div className="relative w-full max-w-6xl bg-surface-container-low border border-white/10 shadow-2xl flex flex-col md:flex-row overflow-hidden rounded-[2.5rem] animate-in fade-in slide-in-from-bottom-12 duration-700">
             <div className="w-full md:w-[60%] aspect-square relative bg-[#020202] flex items-center justify-center p-16 group/img">
-              {/* Modal uses High-Res original image */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
                 alt={selectedModel.name}
@@ -332,7 +360,7 @@ export default function DiscoverPage() {
                 </div>
               </div>
 
-              <div className="mt-auto space-y-8">
+              <div className="mt-auto flex flex-col gap-4">
                 <button 
                   onClick={() => handleAdd(selectedModel)}
                   disabled={isAlreadyInCollection(selectedModel.name) || addingId === selectedModel.name || !user}
@@ -345,7 +373,24 @@ export default function DiscoverPage() {
                 >
                   {addingId === selectedModel.name ? <Loader2 size={24} className="animate-spin" /> : isAlreadyInCollection(selectedModel.name) ? 'Secured in Vault' : <><Plus size={24} /> Acquire Casting</>}
                 </button>
-                <p className="text-center text-[10px] font-label uppercase tracking-[0.3em] text-on-surface/10 font-bold italic">Official Mattel 2026 Reference Documentation</p>
+
+                {!isAlreadyInCollection(selectedModel.name) && (
+                  <button 
+                    onClick={() => handleAddISO(selectedModel)}
+                    disabled={isAlreadyInISO(selectedModel.name) || !user}
+                    className={`w-full py-4 flex items-center justify-center gap-3 border font-headline text-xs font-bold tracking-[0.2em] uppercase transition-all duration-300
+                      ${isAlreadyInISO(selectedModel.name) 
+                        ? 'border-white/5 text-on-surface/20 cursor-default' 
+                        : 'border-white/20 text-on-surface/60 hover:bg-white hover:text-black hover:border-white'
+                      }
+                    `}
+                  >
+                    <Heart size={18} fill={isAlreadyInISO(selectedModel.name) ? "currentColor" : "none"} />
+                    {isAlreadyInISO(selectedModel.name) ? 'On Wishlist' : 'Add to Wishlist'}
+                  </button>
+                )}
+                
+                <p className="text-center text-[10px] font-label uppercase tracking-[0.3em] text-on-surface/10 font-bold italic pt-4">Official Mattel 2026 Reference Documentation</p>
               </div>
             </div>
           </div>
