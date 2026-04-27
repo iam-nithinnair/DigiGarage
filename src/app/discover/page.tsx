@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useStore } from "@/store/useStore";
-import { Search, Plus, Sparkles, CheckCircle2, Loader2, Globe, Database, ChevronDown, X, Info, Hash, AlertTriangle, Calendar, Layers, Heart } from "lucide-react";
+import { Search, Plus, Sparkles, CheckCircle2, Loader2, Globe, Database, ChevronDown, X, Info, Hash, AlertTriangle, Calendar, Layers, Bookmark } from "lucide-react";
 import { toast } from "sonner";
 
 interface WikiCar {
@@ -254,7 +254,7 @@ export default function DiscoverPage() {
 
                 {!inCollection && inISO && (
                   <div className="absolute top-4 left-4 bg-secondary-container/90 backdrop-blur-md text-white px-3 py-1 rounded-full flex items-center gap-1.5 shadow-xl z-20">
-                    <Heart size={12} fill="white" />
+                    <Bookmark size={12} fill="white" />
                     <span className="font-label text-[9px] font-bold uppercase tracking-wider">Wishlisted</span>
                   </div>
                 )}
@@ -307,7 +307,7 @@ export default function DiscoverPage() {
                       title={inISO ? "Already in Wishlist" : "Add to Wishlist"}
                       className={`p-3 transition-all duration-300 ${inISO ? 'bg-surface-container-highest text-primary/50' : 'bg-surface-container-high text-on-surface/60 hover:text-primary hover:bg-white'}`}
                     >
-                       <Heart size={16} fill={inISO ? "currentColor" : "none"} />
+                       <Bookmark size={16} fill={inISO ? "currentColor" : "none"} />
                     </button>
                   )}
                 </div>
@@ -385,7 +385,7 @@ export default function DiscoverPage() {
                       }
                     `}
                   >
-                    <Heart size={18} fill={isAlreadyInISO(selectedModel.name) ? "currentColor" : "none"} />
+                    <Bookmark size={18} fill={isAlreadyInISO(selectedModel.name) ? "currentColor" : "none"} />
                     {isAlreadyInISO(selectedModel.name) ? 'On Wishlist' : 'Add to Wishlist'}
                   </button>
                 )}
