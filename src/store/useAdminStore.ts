@@ -71,29 +71,46 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   fetchCurrentUserRole: async (userId: string) => {
     const supabase = createClient();
     try {
+      // Use maybeSingle to avoid PGRST116 error when no row exists
       const { data, error } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
+        console.error('[Admin] Failed to fetch role:', error.code, error.message);
         // Profile might not exist yet — create one
-        if (error.code === 'PGRST116') {
+        if (error.code === 'PGRST116' || !data) {
           const { error: insertError } = await supabase
             .from('profiles')
             .insert({ id: userId, role: 'user' });
-          if (!insertError) {
+          if (insertError) {
+            console.error('[Admin] Failed to create profile:', insertError.message);
+          } else {
             set({ currentUserRole: 'user', isAdmin: false });
           }
         }
         return;
       }
 
-      const role = (data?.role as UserRole) || 'user';
+      if (!data) {
+        // No profile exists — create one
+        console.log('[Admin] No profile found, creating one for:', userId);
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({ id: userId, role: 'user' });
+        if (!insertError) {
+          set({ currentUserRole: 'user', isAdmin: false });
+        }
+        return;
+      }
+
+      const role = (data.role as UserRole) || 'user';
+      console.log('[Admin] User role:', role);
       set({ currentUserRole: role, isAdmin: role === 'admin' });
     } catch (e) {
-      // Silently fail — user just won't have admin access
+      console.error('[Admin] Exception fetching role:', e);
     }
   },
 
