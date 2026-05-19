@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useStore } from "@/store/useStore";
 import ModelCard from "@/components/ModelCard";
-import ISOCard from "@/components/ISOCard";
 import { ArrowRight } from "lucide-react";
 
 export default function Page() {
@@ -95,12 +94,13 @@ export default function Page() {
                     <span className="px-2 py-1 bg-primary-container text-[10px] font-bold font-headline uppercase tracking-tighter">Rarity: {iso.rarity}</span>
                   </div>
                 </div>
-                <button 
-                  aria-label={`Search sellers for ${iso.name}`}
+                <Link
+                  href="/discover"
+                  aria-label={`Search for ${iso.name}`}
                   className="px-6 py-3 border border-outline-variant/30 hover:bg-primary-container hover:text-white transition-all font-headline uppercase text-xs tracking-widest font-bold"
                 >
-                  Search Sellers
-                </button>
+                  Search Discover
+                </Link>
               </div>
             ))
           ) : (

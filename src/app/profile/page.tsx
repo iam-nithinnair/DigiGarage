@@ -20,6 +20,7 @@ export default function ProfilePage() {
 
   if (!user) return null;
 
+  const displayName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Curator';
   const recentAcquisitions = models.slice(0, 2);
   
   // Calculate total acquisition cost
@@ -37,18 +38,15 @@ export default function ProfilePage() {
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8 auto-rows-[auto]">
         {/* Identity Card */}
         <section className="col-span-1 md:col-span-12 lg:col-span-8 bg-surface-container-low rounded-xl relative overflow-hidden group hover:bg-surface-container transition-colors duration-500 flex flex-col sm:flex-row p-8 lg:p-12 gap-8 items-center sm:items-start border border-white/5 shadow-2xl">
-          <div className="w-32 h-32 md:w-48 md:h-48 rounded-full overflow-hidden shrink-0 relative border-4 border-white/5">
-            <Image 
-              fill
-              alt={user.email || "Curator"} 
-              className="object-cover grayscale hover:grayscale-0 transition-all duration-700" 
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdQhVtGwaiP0cwO6TO7noyJO7zIUwFZIqAik1uJTOpfBWe5kqW3NWA8ZwenfMCckCBiG8Dq5f1Nu4YhiSm3tP11rErZrDDX2dAi6XvL0B1Sg5I43shH4zYxvSn48lboD6ySTUcGSC68bhKofG3oJx_HcrW7sN0m6R8y5YxT1sUgh6_0HsZuPTqSmtqQ8VfcYkzbxZlYfGxg1cS7l8RLCKtsj1G3FdX_37fjeQBEsPyy58nlGqexauGsRADOfgTkPSJ7BEn9ByDDSo"
-            />
+          <div className="w-32 h-32 md:w-48 md:h-48 rounded-full overflow-hidden shrink-0 relative border-4 border-white/5 bg-primary-container flex items-center justify-center">
+            <span className="font-headline text-5xl md:text-7xl font-black text-on-primary-container uppercase select-none">
+              {displayName.charAt(0)}
+            </span>
           </div>
           <div className="flex flex-col flex-grow justify-center sm:justify-start h-full py-4 text-center sm:text-left z-10">
             <div className="bg-surface-container-highest text-on-surface-variant font-label text-[10px] uppercase tracking-[0.1em] px-3 py-1 rounded-none self-center sm:self-start mb-4">Master Curator</div>
-            <h2 className="font-headline text-3xl md:text-5xl font-bold text-on-surface mb-2 uppercase tracking-tight">{user.email?.split('@')[0]}</h2>
-            <p className="font-body text-on-surface/40 mb-8">Member since {new Date(user.created_at).getFullYear()} • Tier 3 Collector</p>
+            <h2 className="font-headline text-3xl md:text-5xl font-bold text-on-surface mb-2 uppercase tracking-tight">{displayName}</h2>
+            <p className="font-body text-on-surface/40 mb-8">Member since {new Date(user.created_at).getFullYear()} • {user.email}</p>
             <div className="mt-auto flex gap-4 justify-center sm:justify-start">
               <button className="bg-surface-container-high text-on-surface-variant font-label text-xs uppercase tracking-wider px-6 py-3 rounded-none hover:bg-surface-container-highest transition-colors border border-white/5 flex items-center gap-2">
                 <Edit3 size={14} />

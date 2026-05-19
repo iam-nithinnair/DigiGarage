@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useStore } from "@/store/useStore";
 import { Search, Plus, Sparkles, CheckCircle2, Loader2, Globe, Database, ChevronDown, X, Info, Hash, AlertTriangle, Calendar, Layers, Bookmark } from "lucide-react";
 import { toast } from "sonner";
@@ -24,8 +24,14 @@ export default function DiscoverPage() {
   const [wikiResults, setWikiResults] = useState<WikiCar[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedModel, setSelectedModel] = useState<WikiCar | null>(null);
+  const masterListCache = useRef<WikiCar[] | null>(null);
 
-  const fetch2026MasterList = async () => {
+  const fetch2026MasterList = useCallback(async () => {
+    // Use cached results if available
+    if (masterListCache.current) {
+      setWikiResults(masterListCache.current);
+      return;
+    }
     setIsLoading(true);
     try {
       const revRes = await fetch(`https://hotwheels.fandom.com/api.php?action=query&format=json&origin=*&prop=revisions&rvprop=content&titles=List_of_2026_Hot_Wheels`);
@@ -93,15 +99,16 @@ export default function DiscoverPage() {
           }
         });
       }
+      masterListCache.current = finalCars;
       setWikiResults(finalCars);
     } catch (error) {
-      console.error("Master list fetch failed:", error);
+      toast.error("Failed to load 2026 master list");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const performSearch = async (query: string) => {
+  const performSearch = useCallback(async (query: string) => {
     setIsLoading(true);
     try {
       const response = await fetch(
@@ -129,7 +136,7 @@ export default function DiscoverPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (searchQuery.length >= 3) {
@@ -138,7 +145,17 @@ export default function DiscoverPage() {
     } else if (searchQuery.length === 0) {
       fetch2026MasterList();
     }
-  }, [searchQuery]);
+  }, [searchQuery, performSearch, fetch2026MasterList]);
+
+  // Close detail modal on Escape
+  useEffect(() => {
+    if (!selectedModel) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSelectedModel(null);
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [selectedModel]);
 
   const isAlreadyInCollection = (name: string) => {
     return models.some(m => m.name.toLowerCase() === name.toLowerCase());
@@ -229,8 +246,8 @@ export default function DiscoverPage() {
           const isAdding = addingId === item.name;
 
           return (
-            <article 
-              key={index}
+            <article
+              key={`${item.name}-${item.series}-${item.collectorNumber || index}`}
               onClick={() => setSelectedModel(item)}
               className="bg-surface-container-low group hover:bg-surface-container transition-all duration-500 border border-white/5 relative overflow-hidden flex flex-col cursor-pointer shadow-lg hover:shadow-primary/5"
             >
@@ -321,7 +338,7 @@ export default function DiscoverPage() {
       {selectedModel && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
           <div className="absolute inset-0 bg-background/98 backdrop-blur-2xl" onClick={() => setSelectedModel(null)}></div>
-          <div className="relative w-full max-w-6xl bg-surface-container-low border border-white/10 shadow-2xl flex flex-col md:flex-row overflow-hidden rounded-[2.5rem] animate-in fade-in slide-in-from-bottom-12 duration-700">
+          <div role="dialog" aria-modal="true" aria-labelledby="discover-modal-title" className="relative w-full max-w-6xl bg-surface-container-low border border-white/10 shadow-2xl flex flex-col md:flex-row overflow-hidden rounded-[2.5rem] animate-in fade-in slide-in-from-bottom-12 duration-700">
             <div className="w-full md:w-[60%] aspect-square relative bg-[#020202] flex items-center justify-center p-16 group/img">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
@@ -338,7 +355,7 @@ export default function DiscoverPage() {
                     <div className="h-[2px] w-12 bg-primary"></div>
                     <span className="font-label text-[11px] uppercase tracking-[0.5em] text-primary font-black">{selectedModel.series}</span>
                   </div>
-                  <h2 className="font-headline text-6xl font-black text-on-surface tracking-tighter uppercase leading-[0.85]">{selectedModel.name}</h2>
+                  <h2 id="discover-modal-title" className="font-headline text-6xl font-black text-on-surface tracking-tighter uppercase leading-[0.85]">{selectedModel.name}</h2>
                 </div>
                 <button onClick={() => setSelectedModel(null)} className="p-3 hover:bg-surface-bright rounded-full transition-all text-on-surface/20 hover:text-on-surface">
                   <X size={32} />

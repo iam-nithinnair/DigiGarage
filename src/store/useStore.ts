@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { createClient } from '@/lib/supabase/client';
-import { User } from '@supabase/supabase-js';
+import { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 
 export interface Model {
@@ -43,6 +43,8 @@ interface CollectionState {
   initializeAuth: () => void;
 }
 
+let authInitialized = false;
+
 export const useStore = create<CollectionState>((set, get) => {
   const getSupabase = () => createClient();
 
@@ -52,10 +54,14 @@ export const useStore = create<CollectionState>((set, get) => {
     user: null,
     isLoaded: false,
     initializeAuth: () => {
+      // Guard: only initialize once to prevent listener leaks
+      if (authInitialized) return;
+      authInitialized = true;
+
       const supabase = getSupabase();
-      
+
       // Initial check
-      supabase.auth.getUser().then(({ data: { user } }) => {
+      supabase.auth.getUser().then(({ data: { user } }: { data: { user: User | null } }) => {
         if (user) {
           set({ user });
           get().fetchData();
@@ -64,9 +70,8 @@ export const useStore = create<CollectionState>((set, get) => {
         }
       });
 
-      // Listen for changes
-      supabase.auth.onAuthStateChange((event, session) => {
-        console.log("Auth state changed:", event, session?.user?.email);
+      // Listen for changes (single subscription for app lifetime)
+      supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           set({ user: session?.user ?? null });
           get().fetchData();
@@ -104,14 +109,10 @@ export const useStore = create<CollectionState>((set, get) => {
 
         if (!modelsRes.error && modelsRes.data) {
            loadedModels = modelsRes.data;
-        } else if (modelsRes.error) {
-           console.error("Supabase Error (models):", modelsRes.error.message, modelsRes.error.code);
         }
 
         if (!isoModelsRes.error && isoModelsRes.data) {
            loadedIsoModels = isoModelsRes.data;
-        } else if (isoModelsRes.error) {
-           console.error("Supabase Error (iso_models):", isoModelsRes.error.message, isoModelsRes.error.code);
         }
 
         set({ 
@@ -152,20 +153,18 @@ export const useStore = create<CollectionState>((set, get) => {
           isFavorite: false 
         };
         
-        console.log("Attempting to insert model:", newRecord);
         const { data, error } = await supabase.from('models').insert([newRecord]).select();
         
         if (error) {
-          console.error("Supabase error adding model:", error.message, error.code, error.details);
           toast.error(`Database Error: ${error.message}`);
+          throw new Error(error.message);
         } else if (data && data.length > 0) {
-          console.log("Model added successfully:", data[0]);
           set((state) => ({ models: [data[0], ...state.models] }));
         } else {
-          console.warn("Model inserted but no data returned. Check RLS policies.");
+          throw new Error("Model inserted but no data returned. Check RLS policies.");
         }
       } catch (e) {
-        console.error("Unexpected error in addModel:", e);
+        throw e;
       }
     },
     removeModel: async (id) => {
@@ -224,20 +223,18 @@ export const useStore = create<CollectionState>((set, get) => {
           rarity: model.rarity,
           user_id: user.id 
         };
-        console.log("Attempting to insert ISO model:", newRecord);
         const { data, error } = await supabase.from('iso_models').insert([newRecord]).select();
         
         if (error) {
-          console.error("Supabase error adding ISO model:", error.message, error.code);
           toast.error(`Database Error: ${error.message}`);
+          throw new Error(error.message);
         } else if (data && data.length > 0) {
-          console.log("ISO model added successfully:", data[0]);
           set((state) => ({ isoModels: [data[0], ...state.isoModels] }));
         } else {
-          console.warn("ISO model inserted but no data returned. Check RLS policies.");
+          throw new Error("ISO model inserted but no data returned. Check RLS policies.");
         }
       } catch (e) {
-        console.error("Unexpected error in addISOModel:", e);
+        throw e;
       }
     },
     removeISOModel: async (id) => {
@@ -255,7 +252,11 @@ export const useStore = create<CollectionState>((set, get) => {
     },
     signOut: async () => {
       const supabase = getSupabase();
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        toast.error("Sign out failed. Please try again.");
+        return;
+      }
       set({ models: [], isoModels: [], user: null });
     },
     resendConfirmationEmail: async (email: string) => {

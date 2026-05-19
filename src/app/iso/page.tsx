@@ -5,16 +5,20 @@ import { useStore } from "@/store/useStore";
 import Image from "next/image";
 import AddISOModal from "@/components/AddISOModal";
 import { Plus, Trash2, Info } from "lucide-react";
+import AuthGuard from "@/components/AuthGuard";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function ISOPage() {
   const isoModels = useStore(state => state.isoModels);
   const removeISOModel = useStore(state => state.removeISOModel);
   const [isModalOpen, setModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   const featuredISO = isoModels[0];
   const otherISOs = isoModels.slice(1);
 
   return (
+    <AuthGuard>
     <main className="pt-24 pb-20 px-6 md:px-12 max-w-[1440px] mx-auto min-h-screen">
       {/* iso-header */}
       <section className="flex flex-col md:flex-row justify-between items-end gap-6 mb-12 border-b border-[#5e3f3a]/15 pb-8" id="iso-header">
@@ -62,8 +66,8 @@ export default function ISOPage() {
                   <span className="text-[10px] font-label text-on-surface/40 uppercase">Est. Value</span>
                   <span className="text-xl font-headline font-bold">{featuredISO.targetPrice}</span>
                 </div>
-                <button 
-                  onClick={() => removeISOModel(featuredISO.id)}
+                <button
+                  onClick={() => setDeleteTarget({ id: featuredISO.id, name: featuredISO.name })}
                   className="flex items-center gap-2 text-error hover:text-white transition-colors group/btn"
                 >
                   <Trash2 size={16} />
@@ -84,16 +88,12 @@ export default function ISOPage() {
           <div className="absolute top-[-20px] right-[-20px] text-white/10 font-headline font-black text-9xl pointer-events-none italic">ISO</div>
           <div className="z-10">
             <h3 className="font-headline font-bold text-2xl mb-4 leading-tight uppercase">Curator's Insights</h3>
-            <p className="text-on-primary-container/80 text-sm leading-relaxed">The collector market has seen a 22% increase in value this quarter. Recommended acquisition window: Q4 2024.</p>
+            <p className="text-on-primary-container/80 text-sm leading-relaxed">Track your most sought-after models. Mark targets, set budgets, and watch your collection grow.</p>
           </div>
           <div className="z-10 flex flex-col gap-2 mt-8">
             <div className="flex justify-between border-b border-on-primary-container/20 pb-2">
               <span className="text-[10px] font-label uppercase opacity-60">Active Hunts</span>
               <span className="font-headline font-bold">{isoModels.length}</span>
-            </div>
-            <div className="flex justify-between border-b border-on-primary-container/20 pb-2">
-              <span className="text-[10px] font-label uppercase opacity-60">Acquired this Month</span>
-              <span className="font-headline font-bold">02</span>
             </div>
           </div>
         </div>
@@ -117,8 +117,8 @@ export default function ISOPage() {
                 </div>
               </div>
               <div className="flex justify-end gap-4 mt-4">
-                <button 
-                  onClick={() => removeISOModel(iso.id)}
+                <button
+                  onClick={() => setDeleteTarget({ id: iso.id, name: iso.name })}
                   className="text-[10px] font-label uppercase tracking-widest text-error/60 hover:text-error transition-colors"
                 >
                   Remove
@@ -130,6 +130,21 @@ export default function ISOPage() {
       </section>
 
       <AddISOModal isOpen={isModalOpen} onClose={() => setModalOpen(false)} />
+
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        title="Remove ISO Model"
+        message={`Are you sure you want to remove "${deleteTarget?.name}" from your hunt list? This action cannot be undone.`}
+        confirmLabel="Remove"
+        onConfirm={() => {
+          if (deleteTarget) {
+            removeISOModel(deleteTarget.id);
+            setDeleteTarget(null);
+          }
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </main>
+    </AuthGuard>
   );
 }

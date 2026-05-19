@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "@/store/useStore";
 import { X, DollarSign, Tag, Award, MapPin, Upload, Loader2, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -27,9 +27,22 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
     storage_location: ""
   });
 
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      toast.error("Invalid file type. Please upload PNG, JPG, WebP, or GIF.");
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error("File too large. Maximum size is 5MB.");
+      return;
+    }
 
     setUploading(true);
     const supabase = createClient();
@@ -84,14 +97,23 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
     }
   };
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
       <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={onClose}></div>
-      <div className="relative w-full max-w-3xl bg-surface-container-low border border-white/5 shadow-2xl p-8 rounded-xl max-h-[90vh] overflow-y-auto">
+      <div role="dialog" aria-modal="true" aria-labelledby="add-modal-title" className="relative w-full max-w-3xl bg-surface-container-low border border-white/5 shadow-2xl p-8 rounded-xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-8">
-          <h2 className="font-headline text-2xl font-bold uppercase tracking-tight">Catalog New Acquisition</h2>
+          <h2 id="add-modal-title" className="font-headline text-2xl font-bold uppercase tracking-tight">Catalog New Acquisition</h2>
           <button onClick={onClose} className="p-2 hover:bg-surface-container-high rounded-full transition-colors">
             <X size={20} />
           </button>
@@ -155,6 +177,15 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
                         placeholder="2024"
                       />
                     </div>
+                  </div>
+                  <div>
+                    <label className="font-label text-[10px] uppercase tracking-widest text-on-surface/40 mb-2 block">Series</label>
+                    <input
+                      value={formData.series}
+                      onChange={(e) => setFormData({ ...formData, series: e.target.value })}
+                      className="w-full bg-surface-container-highest border-b border-white/10 p-3 outline-none focus:border-primary transition-colors text-sm"
+                      placeholder="e.g. Die-Cast, Mainline, Premium"
+                    />
                   </div>
                </div>
             </div>

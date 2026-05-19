@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useStore } from "@/store/useStore";
 import ModelCard from "@/components/ModelCard";
 import AddModal from "@/components/AddModal";
+import AuthGuard from "@/components/AuthGuard";
 import { Plus, ChevronDown } from "lucide-react";
 
 export default function CollectionPage() {
@@ -47,7 +48,11 @@ export default function CollectionPage() {
     setManFilter(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m]);
   };
 
+  // Dynamic series from actual data
+  const allSeries = Array.from(new Set(models.map(m => m.series).filter(Boolean)));
+
   return (
+    <AuthGuard>
     <main className="pb-24 px-8 max-w-[1440px] mx-auto w-full">
       <header className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6 pt-12">
         <div>
@@ -79,7 +84,7 @@ export default function CollectionPage() {
           <div>
             <h3 className="font-label text-[10px] uppercase tracking-[0.2em] text-on-surface/40 mb-6">Series</h3>
             <div className="space-y-3">
-              {['Die-Cast', 'Resin', 'Composite'].map(s => (
+              {allSeries.map(s => (
                 <label key={s} className="flex items-center gap-3 cursor-pointer group">
                   <input type="checkbox" checked={seriesFilter.includes(s)} onChange={() => toggleSeries(s)} className="w-5 h-5 bg-surface-container-high border-none text-primary-container rounded-sm focus:ring-offset-background" />
                   <span className="font-headline text-sm group-hover:text-primary transition-colors">{s}</span>
@@ -116,5 +121,6 @@ export default function CollectionPage() {
 
       <AddModal isOpen={isAddModalOpen} onClose={() => setAddModalOpen(false)} />
     </main>
+    </AuthGuard>
   );
 }

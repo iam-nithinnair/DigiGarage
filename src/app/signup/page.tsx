@@ -1,6 +1,6 @@
 'use client';
 
-import { KeyRound, Mail, X, Eye, CheckCircle } from 'lucide-react'
+import { KeyRound, Mail, X, Eye, EyeOff, CheckCircle } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -13,6 +13,7 @@ export default function SignUpPage() {
   const [errorText, setErrorText] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -20,6 +21,7 @@ export default function SignUpPage() {
     setLoading(true)
 
     const formData = new FormData(e.currentTarget)
+    const fullName = formData.get('full_name') as string
     const email = formData.get('email') as string
     const password = formData.get('password') as string
     const confirmPassword = formData.get('confirm_password') as string
@@ -30,10 +32,21 @@ export default function SignUpPage() {
       return
     }
 
+    if (password.length < 6) {
+      setErrorText('Password must be at least 6 characters')
+      setLoading(false)
+      return
+    }
+
     const supabase = createClient()
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          full_name: fullName || undefined,
+        },
+      },
     })
 
     setLoading(false)
@@ -138,15 +151,22 @@ export default function SignUpPage() {
             <div className="group">
               <label className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2 block group-focus-within:text-primary transition-colors" htmlFor="password">Password</label>
               <div className="relative">
-                <input 
-                  id="password" 
-                  name="password" 
-                  type="password" 
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
                   required
-                  placeholder="••••••••" 
-                  className="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant/15 py-3 px-0 focus:ring-0 focus:border-primary text-on-surface placeholder:text-on-surface-variant/30 font-body transition-all outline-none" 
+                  placeholder="••••••••"
+                  className="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant/15 py-3 px-0 pr-8 focus:ring-0 focus:border-primary text-on-surface placeholder:text-on-surface-variant/30 font-body transition-all outline-none"
                 />
-                <Eye size={18} className="absolute right-0 top-1/2 -translate-y-1/2 text-on-surface-variant/40 hover:text-on-surface cursor-pointer" />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 text-on-surface-variant/40 hover:text-on-surface cursor-pointer"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
             </div>
 

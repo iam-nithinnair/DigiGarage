@@ -14,6 +14,7 @@ export default function LoginPage() {
   const [errorText, setErrorText] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [resendSuccess, setResendEmailSuccess] = useState(false)
   const resendConfirmationEmail = useStore(state => state.resendConfirmationEmail)
 
@@ -23,22 +24,16 @@ export default function LoginPage() {
     setResendEmailSuccess(false)
     setLoading(true)
 
-    const formData = new FormData(e.currentTarget)
-    const emailValue = formData.get('email') as string
-    const password = formData.get('password') as string
-
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithPassword({
-      email: emailValue,
+      email,
       password,
     })
 
     setLoading(false)
 
     if (error) {
-      console.error("Auth error details:", error)
       setErrorText(error.message)
-      setEmail(emailValue)
       toast.error(error.message)
     } else {
       toast.success("Welcome back, Curator.")
@@ -87,14 +82,15 @@ export default function LoginPage() {
             {/* Email Input */}
             <div className="group">
               <label className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant block mb-2 px-1" htmlFor="email">Email Terminal</label>
-              <input 
-                id="email" 
-                name="email" 
-                type="email" 
+              <input
+                id="email"
+                name="email"
+                type="email"
                 required
-                defaultValue={email}
-                placeholder="curator@precision.com" 
-                className="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant/15 text-on-surface py-3 px-4 focus:ring-0 focus:border-primary transition-all duration-300 placeholder:text-on-surface-variant/30 font-body text-sm outline-none" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="curator@precision.com"
+                className="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant/15 text-on-surface py-3 px-4 focus:ring-0 focus:border-primary transition-all duration-300 placeholder:text-on-surface-variant/30 font-body text-sm outline-none"
               />
             </div>
             
@@ -104,13 +100,15 @@ export default function LoginPage() {
                 <label className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant block" htmlFor="password">Access Key</label>
                 <Link href="#" className="font-label text-[10px] uppercase tracking-widest text-primary-fixed-dim hover:text-primary transition-colors">Forgot Password?</Link>
               </div>
-              <input 
-                id="password" 
-                name="password" 
-                type="password" 
+              <input
+                id="password"
+                name="password"
+                type="password"
                 required
-                placeholder="••••••••" 
-                className="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant/15 text-on-surface py-3 px-4 focus:ring-0 focus:border-primary transition-all duration-300 placeholder:text-on-surface-variant/30 font-body text-sm outline-none" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant/15 text-on-surface py-3 px-4 focus:ring-0 focus:border-primary transition-all duration-300 placeholder:text-on-surface-variant/30 font-body text-sm outline-none"
               />
             </div>
             

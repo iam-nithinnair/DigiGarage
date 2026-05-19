@@ -4,16 +4,22 @@ import { useStore } from "@/store/useStore";
 import ModelCard from "@/components/ModelCard";
 import Image from "next/image";
 import { Download, Heart, Maximize2, BarChart3, PlusCircle } from "lucide-react";
+import { toast } from "sonner";
+import AuthGuard from "@/components/AuthGuard";
 
 export default function FavoritesPage() {
   const models = useStore(state => state.models);
+  const toggleFavorite = useStore(state => state.toggleFavorite);
   const favorites = models.filter(m => m.isFavorite);
 
   const heroFavorite = favorites[0];
   const secondaryFavorite = favorites[1];
   const otherFavorites = favorites.slice(2);
 
+  const totalFavoritesValue = favorites.reduce((acc, m) => acc + (m.purchase_price || 0), 0);
+
   return (
+    <AuthGuard>
     <main className="pt-32 pb-24 min-h-screen px-8 max-w-[1440px] mx-auto">
       {/* favorites-header */}
       <header className="mb-16 flex flex-col md:flex-row md:items-end justify-between gap-6" id="favorites-header">
@@ -32,7 +38,7 @@ export default function FavoritesPage() {
         <div className="flex items-center gap-4">
           <div className="text-right">
             <div className="font-label text-[10px] tracking-[0.1em] text-on-surface-variant/40 uppercase">Total Value</div>
-            <div className="font-headline text-2xl font-bold text-on-surface">EST. $104.2M</div>
+            <div className="font-headline text-2xl font-bold text-on-surface">₹{totalFavoritesValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           </div>
           <div className="w-[1px] h-10 bg-outline-variant/15"></div>
           <button className="bg-surface-container-high hover:bg-surface-container-highest px-6 py-3 flex items-center gap-2 transition-all group">
@@ -47,19 +53,23 @@ export default function FavoritesPage() {
         {heroFavorite ? (
           <div className="lg:col-span-8 group relative overflow-hidden bg-surface-container-low transition-all duration-300">
             <div className="aspect-[16/9] w-full relative">
-              <Image 
-                fill
-                alt={heroFavorite.name} 
-                className="object-cover transition-transform duration-700 group-hover:scale-105 opacity-80" 
-                src={heroFavorite.image}
-              />
+              {heroFavorite.image ? (
+                <Image
+                  fill
+                  alt={heroFavorite.name}
+                  className="object-cover transition-transform duration-700 group-hover:scale-105 opacity-80"
+                  src={heroFavorite.image}
+                />
+              ) : (
+                <div className="w-full h-full bg-surface-container-highest flex items-center justify-center font-headline text-on-surface/50">No Image</div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
               {/* Action Overlay */}
               <div className="absolute top-6 right-6 flex flex-col gap-3">
-                <button className="w-12 h-12 bg-primary-container text-white flex items-center justify-center shadow-2xl hover:scale-110 transition-transform">
+                <button aria-label={`Unfavorite ${heroFavorite.name}`} className="w-12 h-12 bg-primary-container text-white flex items-center justify-center shadow-2xl hover:scale-110 transition-transform">
                   <Heart size={24} fill="white" />
                 </button>
-                <button className="w-12 h-12 bg-black/40 backdrop-blur-md text-white flex items-center justify-center hover:bg-primary-container transition-colors">
+                <button aria-label={`View ${heroFavorite.name} fullscreen`} className="w-12 h-12 bg-black/40 backdrop-blur-md text-white flex items-center justify-center hover:bg-primary-container transition-colors">
                   <Maximize2 size={24} />
                 </button>
               </div>
@@ -73,10 +83,12 @@ export default function FavoritesPage() {
                 <h2 className="font-headline text-4xl font-bold tracking-tight text-on-surface uppercase">{heroFavorite.name}</h2>
                 <p className="font-body text-sm text-on-surface-variant/60 mt-2">{heroFavorite.year} • {heroFavorite.manufacturer} • {heroFavorite.series} Precision</p>
               </div>
-              <div className="flex flex-col items-end">
-                <span className="font-label text-[10px] tracking-widest text-on-surface-variant/40 uppercase mb-1">Market Valuation</span>
-                <span className="font-headline text-3xl font-bold text-primary">$70,000,000+</span>
-              </div>
+              {heroFavorite.purchase_price != null && heroFavorite.purchase_price > 0 && (
+                <div className="flex flex-col items-end">
+                  <span className="font-label text-[10px] tracking-widest text-on-surface-variant/40 uppercase mb-1">Purchase Price</span>
+                  <span className="font-headline text-3xl font-bold text-primary">₹{Number(heroFavorite.purchase_price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                </div>
+              )}
             </div>
           </div>
         ) : (
@@ -88,12 +100,16 @@ export default function FavoritesPage() {
         {secondaryFavorite ? (
           <div className="lg:col-span-4 group flex flex-col bg-surface-container-low transition-all duration-300">
             <div className="aspect-square w-full relative overflow-hidden">
-              <Image 
-                fill
-                alt={secondaryFavorite.name} 
-                className="object-cover transition-transform duration-700 group-hover:scale-110 opacity-70" 
-                src={secondaryFavorite.image}
-              />
+              {secondaryFavorite.image ? (
+                <Image
+                  fill
+                  alt={secondaryFavorite.name}
+                  className="object-cover transition-transform duration-700 group-hover:scale-110 opacity-70"
+                  src={secondaryFavorite.image}
+                />
+              ) : (
+                <div className="w-full h-full bg-surface-container-highest flex items-center justify-center font-headline text-on-surface/50">No Image</div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent"></div>
               {/* Action Overlay */}
               <div className="absolute top-4 right-4">
@@ -117,8 +133,14 @@ export default function FavoritesPage() {
                   <div className="text-xs font-headline font-semibold text-on-surface">{secondaryFavorite.year}</div>
                 </div>
               </div>
-              <button className="w-full py-4 bg-secondary-container hover:bg-primary-container transition-colors text-on-secondary-container hover:text-white font-label text-[10px] tracking-[0.2em] uppercase">
-                Remove from Archive
+              <button
+                onClick={() => {
+                  toggleFavorite(secondaryFavorite.id);
+                  toast.success(`${secondaryFavorite.name} removed from favorites`);
+                }}
+                className="w-full py-4 bg-secondary-container hover:bg-primary-container transition-colors text-on-secondary-container hover:text-white font-label text-[10px] tracking-[0.2em] uppercase"
+              >
+                Remove from Favorites
               </button>
             </div>
           </div>
@@ -134,7 +156,7 @@ export default function FavoritesPage() {
           <div>
             <h4 className="font-headline text-3xl font-bold text-on-surface mb-2">Collection Density</h4>
             <p className="text-xs text-on-surface-variant/60 uppercase tracking-widest leading-relaxed">
-              Your favorites represent {favorites.length > 0 ? Math.round((favorites.length / models.length) * 100) : 0}% of the total digital archive volume.
+              Your favorites represent {favorites.length > 0 && models.length > 0 ? Math.round((favorites.length / models.length) * 100) : 0}% of the total digital archive volume.
             </p>
           </div>
         </div>
@@ -173,5 +195,6 @@ export default function FavoritesPage() {
         )}
       </div>
     </main>
+    </AuthGuard>
   );
 }
