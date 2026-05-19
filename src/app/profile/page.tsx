@@ -1,15 +1,17 @@
 "use client";
 
 import { useStore } from "@/store/useStore";
+import { useAdminStore } from "@/store/useAdminStore";
 import Image from "next/image";
 import Link from "next/link";
-import { Grid3X3, ShoppingCart, Radar, LogOut, Edit3, ChevronRight, Wallet } from "lucide-react";
+import { Grid3X3, ShoppingCart, Radar, LogOut, Edit3, ChevronRight, Wallet, Shield } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
 export default function ProfilePage() {
   const { user, models, isoModels, signOut, isLoaded, initializeAuth } = useStore();
+  const { isAdmin } = useAdminStore();
   const router = useRouter();
 
   useEffect(() => {
@@ -152,12 +154,25 @@ export default function ProfilePage() {
             </ul>
           </div>
 
+          {isAdmin && (
+            <Link href="/admin" className="bg-surface-dim border border-primary-container/20 rounded-xl p-8 flex items-center justify-between shadow-2xl hover:bg-surface-container-low transition-colors duration-300 group">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <Shield size={16} className="text-primary" />
+                  <h4 className="font-headline font-bold text-on-surface uppercase">Admin Terminal</h4>
+                </div>
+                <p className="font-body text-sm text-on-surface/30">Platform oversight & user management</p>
+              </div>
+              <ChevronRight size={20} className="text-on-surface/20 group-hover:text-primary transition-colors" />
+            </Link>
+          )}
+
           <div className="bg-surface-dim border border-primary-container/20 rounded-xl p-8 flex items-center justify-between shadow-2xl">
             <div>
               <h4 className="font-headline font-bold text-on-surface uppercase">System Access</h4>
               <p className="font-body text-sm text-on-surface/30">End current session securely</p>
             </div>
-            <button 
+            <button
               onClick={() => {
                 signOut();
                 toast.success("Session ended. Securely logged out.");
