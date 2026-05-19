@@ -89,8 +89,10 @@ export default function TopNavBar() {
             {user ? (
               <div className="flex items-center gap-4">
                 <div className="hidden lg:flex flex-col items-end">
-                  <span className="text-[10px] text-on-surface/40 uppercase tracking-widest font-label">Curator</span>
-                  <span className="text-xs text-on-surface font-headline font-bold">{user.email?.split('@')[0]}</span>
+                  <span className={`text-[10px] uppercase tracking-widest font-label ${isAdmin ? 'text-primary' : 'text-on-surface/40'}`}>
+                    {isAdmin ? 'System Admin' : 'Curator'}
+                  </span>
+                  <span className="text-xs text-on-surface font-headline font-bold">{user.user_metadata?.full_name || user.email?.split('@')[0]}</span>
                 </div>
                 <Link
                   href="/profile"
