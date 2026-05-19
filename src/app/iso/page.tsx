@@ -64,7 +64,7 @@ export default function ISOPage() {
               <div className="flex justify-between items-center">
                 <div className="flex flex-col">
                   <span className="text-[10px] font-label text-on-surface/40 uppercase">Est. Value</span>
-                  <span className="text-xl font-headline font-bold">{featuredISO.targetPrice}</span>
+                  <span className="text-xl font-headline font-bold">{featuredISO.targetprice}</span>
                 </div>
                 <button
                   onClick={() => setDeleteTarget({ id: featuredISO.id, name: featuredISO.name })}
@@ -113,7 +113,7 @@ export default function ISOPage() {
                   <span className="text-[10px] font-label text-primary font-bold uppercase tracking-wider">{iso.rarity}</span>
                 </div>
                 <div className="flex gap-2 text-[10px] font-label uppercase text-on-surface/40">
-                  <span>Target: {iso.targetPrice}</span>
+                  <span>Target: {iso.targetprice}</span>
                 </div>
               </div>
               <div className="flex justify-end gap-4 mt-4">

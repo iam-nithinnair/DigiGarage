@@ -22,7 +22,7 @@ export interface Model {
 export interface ISOModel {
   id: string;
   name: string;
-  targetPrice: string;
+  targetprice: string;
   rarity: string;
   user_id: string;
 }
@@ -217,11 +217,11 @@ export const useStore = create<CollectionState>((set, get) => {
 
       const supabase = getSupabase();
       try {
-        const newRecord = { 
+        const newRecord = {
           name: model.name,
-          targetPrice: model.targetPrice,
+          targetprice: model.targetprice,
           rarity: model.rarity,
-          user_id: user.id 
+          user_id: user.id
         };
         const { data, error } = await supabase.from('iso_models').insert([newRecord]).select();
         

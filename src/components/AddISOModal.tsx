@@ -34,7 +34,7 @@ export default function AddISOModal({ isOpen, onClose }: AddISOModalProps) {
     try {
       await addISOModel({
         name,
-        targetPrice,
+        targetprice: targetPrice,
         rarity,
       });
       toast.success(`${name} added to ISO list`);
