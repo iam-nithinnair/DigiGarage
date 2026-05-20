@@ -31,13 +31,8 @@ interface CatalogModel {
 
 const PAGE_SIZE = 40;
 
-const CASE_CODES = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P"] as const;
-const CASE_RANGES: Record<string, string> = {
-  A: "#001–016", B: "#017–032", C: "#033–048", D: "#049–064",
-  E: "#065–080", F: "#081–096", G: "#097–112", H: "#113–128",
-  I: "#129–144", J: "#145–160", K: "#161–176", L: "#177–192",
-  M: "#193–208", N: "#209–224", O: "#225–240", P: "#241–256",
-};
+/** Hot Wheels mainline case letters — I and O are skipped (look like 1 and 0) */
+const CASE_CODES = ["A", "B", "C", "D", "E", "F", "G", "H", "J", "K", "L", "M", "N", "P", "Q"] as const;
 
 /** All years present in the catalog (newest first) */
 const CATALOG_YEARS = [
@@ -124,7 +119,7 @@ export default function DiscoverPage() {
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [seriesFilter, setSeriesFilter] = useState("");
   const [debouncedSeries, setDebouncedSeries] = useState("");
-  const [selectedCases, setSelectedCases] = useState<string[]>([]);
+  const [selectedCase, setSelectedCase] = useState<string>("");
   const [sortBy, setSortBy] = useState("year_desc");
 
   /* UI state */
@@ -159,7 +154,7 @@ export default function DiscoverPage() {
 
       if (debouncedSeries.length >= 2) query = query.ilike("series", `%${debouncedSeries}%`);
 
-      if (selectedCases.length > 0) query = query.in("case_code", selectedCases);
+      if (selectedCase) query = query.eq("case_code", selectedCase);
 
       switch (sortBy) {
         case "year_desc": query = query.order("year", { ascending: false }).order("model_name", { ascending: true }); break;
@@ -184,7 +179,7 @@ export default function DiscoverPage() {
       setIsLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch, selectedYear, debouncedSeries, selectedCases, sortBy, page]);
+  }, [debouncedSearch, selectedYear, debouncedSeries, selectedCase, sortBy, page]);
 
   useEffect(() => { fetchCatalog(); }, [fetchCatalog]);
 
@@ -292,17 +287,10 @@ export default function DiscoverPage() {
   };
 
   /* ── Filter helpers ────────────────────────────────────── */
-  const hasFilters = !!searchQuery || !!selectedYear || !!seriesFilter || selectedCases.length > 0 || sortBy !== "year_desc";
+  const hasFilters = !!searchQuery || !!selectedYear || !!seriesFilter || !!selectedCase || sortBy !== "year_desc";
   const clearFilters = () => {
     setSearchQuery(""); setSelectedYear(null);
-    setSeriesFilter(""); setSelectedCases([]); setSortBy("year_desc"); setPage(0);
-  };
-
-  const toggleCase = (code: string) => {
-    setSelectedCases(prev =>
-      prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]
-    );
-    setPage(0);
+    setSeriesFilter(""); setSelectedCase(""); setSortBy("year_desc"); setPage(0);
   };
 
   /* ── Render ────────────────────────────────────────────── */
@@ -347,65 +335,34 @@ export default function DiscoverPage() {
           </div>
         </div>
 
-        {/* Year Dropdown */}
-        <div className="sm:w-56">
-          <label className="font-label text-[10px] uppercase tracking-[0.15em] text-on-surface/40 mb-2 block">Year</label>
-          <select
-            value={selectedYear ?? ""}
-            onChange={e => { setSelectedYear(e.target.value ? Number(e.target.value) : null); setPage(0); }}
-            className="w-full bg-surface-container-high border border-white/5 py-3 px-4 font-body text-sm text-on-surface outline-none focus:border-primary-container/50 cursor-pointer"
-          >
-            <option value="">All Years</option>
-            {CATALOG_YEARS.map(y => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Case Code Checkboxes */}
-        <div>
-          <label className="font-label text-[10px] uppercase tracking-[0.15em] text-on-surface/40 mb-2 block">Case</label>
-          <div className="flex flex-wrap gap-3">
-            {CASE_CODES.map(code => {
-              const isChecked = selectedCases.includes(code);
-              return (
-                <label
-                  key={code}
-                  className={`flex items-center gap-2.5 px-4 py-2.5 cursor-pointer transition-all duration-200 select-none border
-                    ${isChecked
-                      ? "bg-primary-container/20 border-primary-container/50 text-on-surface"
-                      : "bg-surface-container-high border-white/5 text-on-surface/50 hover:text-on-surface hover:border-white/15"
-                    }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={isChecked}
-                    onChange={() => toggleCase(code)}
-                    className="sr-only"
-                  />
-                  <span className={`w-4 h-4 border-2 flex items-center justify-center transition-all shrink-0
-                    ${isChecked ? "bg-primary-container border-primary-container" : "border-on-surface/20 bg-transparent"}`}
-                  >
-                    {isChecked && (
-                      <svg className="w-2.5 h-2.5 text-on-primary-container" viewBox="0 0 12 12" fill="none">
-                        <path d="M2 6l3 3 5-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    )}
-                  </span>
-                  <span className="font-headline text-sm font-bold tracking-wider">Case {code}</span>
-                  <span className="font-label text-[9px] text-on-surface/30 tracking-wider">{CASE_RANGES[code]}</span>
-                </label>
-              );
-            })}
-          </div>
-          {selectedCases.length > 0 && (
-            <button
-              onClick={() => { setSelectedCases([]); setPage(0); }}
-              className="mt-2 text-primary font-label text-[10px] uppercase tracking-wider hover:text-primary-container transition-colors"
+        {/* Year + Case Dropdowns */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="sm:w-56">
+            <label className="font-label text-[10px] uppercase tracking-[0.15em] text-on-surface/40 mb-2 block">Year</label>
+            <select
+              value={selectedYear ?? ""}
+              onChange={e => { setSelectedYear(e.target.value ? Number(e.target.value) : null); setPage(0); }}
+              className="w-full bg-surface-container-high border border-white/5 py-3 px-4 font-body text-sm text-on-surface outline-none focus:border-primary-container/50 cursor-pointer"
             >
-              Clear Case Filter
-            </button>
-          )}
+              <option value="">All Years</option>
+              {CATALOG_YEARS.map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
+          <div className="sm:w-56">
+            <label className="font-label text-[10px] uppercase tracking-[0.15em] text-on-surface/40 mb-2 block">Case</label>
+            <select
+              value={selectedCase}
+              onChange={e => { setSelectedCase(e.target.value); setPage(0); }}
+              className="w-full bg-surface-container-high border border-white/5 py-3 px-4 font-body text-sm text-on-surface outline-none focus:border-primary-container/50 cursor-pointer"
+            >
+              <option value="">All Cases</option>
+              {CASE_CODES.map(code => (
+                <option key={code} value={code}>Case {code}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Series + Sort */}
@@ -453,7 +410,7 @@ export default function DiscoverPage() {
             <>
               Showing <span className="text-on-surface font-bold">{(page * PAGE_SIZE + 1).toLocaleString()}–{Math.min((page + 1) * PAGE_SIZE, totalCount).toLocaleString()}</span>{" "}
               of <span className="text-on-surface font-bold">{totalCount.toLocaleString()}</span> models
-              {(debouncedSearch || selectedYear || debouncedSeries || selectedCases.length > 0) && <span className="text-primary ml-2">(filtered)</span>}
+              {(debouncedSearch || selectedYear || debouncedSeries || selectedCase) && <span className="text-primary ml-2">(filtered)</span>}
             </>
           )}
         </p>
@@ -725,7 +682,7 @@ export default function DiscoverPage() {
                   {selectedModel.toy_number && <InfoCell label="Toy Number" value={selectedModel.toy_number} icon={<Hash size={13} />} />}
                   {selectedModel.collector_number && <InfoCell label="Collector #" value={selectedModel.collector_number} icon={<Tag size={13} />} />}
                   {selectedModel.series_number && <InfoCell label="Series #" value={selectedModel.series_number} icon={<Layers size={13} />} />}
-                  {selectedModel.case_code && <InfoCell label="Case" value={`Case ${selectedModel.case_code} (${CASE_RANGES[selectedModel.case_code] || ""})`} icon={<Database size={13} />} />}
+                  {selectedModel.case_code && <InfoCell label="Case" value={`Case ${selectedModel.case_code}`} icon={<Database size={13} />} />}
                   {selectedModel.color && (
                     <div className="bg-surface-container p-3 border border-white/5">
                       <div className="flex items-center gap-1.5 mb-1.5">
