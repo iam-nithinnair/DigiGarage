@@ -24,20 +24,28 @@ interface CatalogModel {
   color: string;
   manufacturer: string;
   scale: string;
+  case_code: string | null;
 }
 
 /* ── Constants ─────────────────────────────────────────────── */
 
 const PAGE_SIZE = 40;
 
-const DECADES = [
-  { label: "2020s", start: 2020, end: 2025 },
-  { label: "2010s", start: 2010, end: 2019 },
-  { label: "2000s", start: 2000, end: 2009 },
-  { label: "1990s", start: 1990, end: 1999 },
-  { label: "1980s", start: 1980, end: 1989 },
-  { label: "1970s", start: 1970, end: 1979 },
-  { label: "1968–69", start: 1968, end: 1969 },
+const CASE_CODES = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P"] as const;
+const CASE_RANGES: Record<string, string> = {
+  A: "#001–016", B: "#017–032", C: "#033–048", D: "#049–064",
+  E: "#065–080", F: "#081–096", G: "#097–112", H: "#113–128",
+  I: "#129–144", J: "#145–160", K: "#161–176", L: "#177–192",
+  M: "#193–208", N: "#209–224", O: "#225–240", P: "#241–256",
+};
+
+/** All years present in the catalog (newest first) */
+const CATALOG_YEARS = [
+  2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016,
+  2015, 2014, 2013, 2012, 2011, 2010, 2009, 2008, 2007, 2006,
+  2005, 2004, 2003, 2002, 2000, 1996, 1995, 1994, 1993, 1992,
+  1991, 1990, 1989, 1988, 1987, 1986, 1985, 1984, 1983, 1982,
+  1981, 1980, 1979, 1978, 1977, 1976, 1975, 1974, 1969, 1968,
 ];
 
 /* ── Helpers ───────────────────────────────────────────────── */
@@ -70,6 +78,24 @@ function getColorHex(colorName: string): string | null {
   return null;
 }
 
+/** Clean wiki template markup from series names
+ *  e.g. "Muscle Mania {{NM|2025}} {{DG}}" → "Muscle Mania"
+ *  Also handles: {{KR|White}}, {{STH|2025}}, {{WM|2025|White}}, bgcolor="..." |Text
+ */
+function cleanSeries(raw: string): string {
+  if (!raw) return "";
+  let s = raw
+    .replace(/\{\{[^}]*\}\}/g, "")           // remove {{...}} templates
+    .replace(/bgcolor="[^"]*"\s*\|/g, "")     // remove bgcolor="..." | artifacts
+    .replace(/\[\[[^\]]*\|([^\]]*)\]\]/g, "$1") // [[Link|Text]] → Text
+    .replace(/\[\[([^\]]*)\]\]/g, "$1")        // [[Text]] → Text
+    .replace(/'''?/g, "")                       // remove bold/italic wiki markup
+    .trim();
+  // Collapse multiple spaces
+  s = s.replace(/\s{2,}/g, " ");
+  return s;
+}
+
 /** Safely get Supabase client — returns null during static build */
 function getSupabase() {
   try { return createClient(); } catch { return null; }
@@ -95,10 +121,10 @@ export default function DiscoverPage() {
   /* Filter state */
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [selectedDecade, setSelectedDecade] = useState<{ start: number; end: number } | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [seriesFilter, setSeriesFilter] = useState("");
   const [debouncedSeries, setDebouncedSeries] = useState("");
+  const [selectedCases, setSelectedCases] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState("year_desc");
 
   /* UI state */
@@ -129,11 +155,11 @@ export default function DiscoverPage() {
 
       if (selectedYear) {
         query = query.eq("year", selectedYear);
-      } else if (selectedDecade) {
-        query = query.gte("year", selectedDecade.start).lte("year", selectedDecade.end);
       }
 
       if (debouncedSeries.length >= 2) query = query.ilike("series", `%${debouncedSeries}%`);
+
+      if (selectedCases.length > 0) query = query.in("case_code", selectedCases);
 
       switch (sortBy) {
         case "year_desc": query = query.order("year", { ascending: false }).order("model_name", { ascending: true }); break;
@@ -158,7 +184,7 @@ export default function DiscoverPage() {
       setIsLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch, selectedYear, selectedDecade, debouncedSeries, sortBy, page]);
+  }, [debouncedSearch, selectedYear, debouncedSeries, selectedCases, sortBy, page]);
 
   useEffect(() => { fetchCatalog(); }, [fetchCatalog]);
 
@@ -266,15 +292,18 @@ export default function DiscoverPage() {
   };
 
   /* ── Filter helpers ────────────────────────────────────── */
-  const hasFilters = !!searchQuery || !!selectedDecade || !!selectedYear || !!seriesFilter || sortBy !== "year_desc";
+  const hasFilters = !!searchQuery || !!selectedYear || !!seriesFilter || selectedCases.length > 0 || sortBy !== "year_desc";
   const clearFilters = () => {
-    setSearchQuery(""); setSelectedDecade(null); setSelectedYear(null);
-    setSeriesFilter(""); setSortBy("year_desc"); setPage(0);
+    setSearchQuery(""); setSelectedYear(null);
+    setSeriesFilter(""); setSelectedCases([]); setSortBy("year_desc"); setPage(0);
   };
 
-  const decadeYears = selectedDecade
-    ? Array.from({ length: selectedDecade.end - selectedDecade.start + 1 }, (_, i) => selectedDecade.end - i)
-    : [];
+  const toggleCase = (code: string) => {
+    setSelectedCases(prev =>
+      prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]
+    );
+    setPage(0);
+  };
 
   /* ── Render ────────────────────────────────────────────── */
   return (
@@ -297,15 +326,15 @@ export default function DiscoverPage() {
       {/* ════ Filters (always visible) ══════════════════════ */}
       <div className="bg-surface-container-low border border-white/5 p-6 mb-6 space-y-5" ref={gridRef}>
 
-        {/* Search (Case Name) */}
+        {/* Search by Model Name */}
         <div>
-          <label className="font-label text-[10px] uppercase tracking-[0.15em] text-on-surface/40 mb-2 block">Case Name</label>
+          <label className="font-label text-[10px] uppercase tracking-[0.15em] text-on-surface/40 mb-2 block">Model Name</label>
           <div className="relative group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface/30 group-focus-within:text-primary transition-colors" size={18} />
             <input
               type="text"
-              placeholder="Search by casting name…"
-              aria-label="Search catalog by casting name"
+              placeholder="Search by model name…"
+              aria-label="Search catalog by model name"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="w-full bg-surface-container-high border border-white/5 py-3.5 pl-12 pr-10 focus:border-primary-container transition-all outline-none font-body text-sm text-on-surface"
@@ -318,53 +347,64 @@ export default function DiscoverPage() {
           </div>
         </div>
 
-        {/* Era / Year */}
-        <div>
+        {/* Year Dropdown */}
+        <div className="sm:w-56">
           <label className="font-label text-[10px] uppercase tracking-[0.15em] text-on-surface/40 mb-2 block">Year</label>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => { setSelectedDecade(null); setSelectedYear(null); setPage(0); }}
-              className={`px-4 py-2 font-label text-xs uppercase tracking-wider transition-all
-                ${!selectedDecade ? "bg-primary-container text-on-primary-container" : "bg-surface-container-high text-on-surface/50 hover:text-on-surface"}`}
-            >
-              All Eras
-            </button>
-            {DECADES.map(d => (
-              <button
-                key={d.label}
-                onClick={() => { setSelectedDecade({ start: d.start, end: d.end }); setSelectedYear(null); setPage(0); }}
-                className={`px-4 py-2 font-label text-xs uppercase tracking-wider transition-all
-                  ${selectedDecade?.start === d.start
-                    ? "bg-primary-container text-on-primary-container"
-                    : "bg-surface-container-high text-on-surface/50 hover:text-on-surface"
-                  }`}
-              >
-                {d.label}
-              </button>
+          <select
+            value={selectedYear ?? ""}
+            onChange={e => { setSelectedYear(e.target.value ? Number(e.target.value) : null); setPage(0); }}
+            className="w-full bg-surface-container-high border border-white/5 py-3 px-4 font-body text-sm text-on-surface outline-none focus:border-primary-container/50 cursor-pointer"
+          >
+            <option value="">All Years</option>
+            {CATALOG_YEARS.map(y => (
+              <option key={y} value={y}>{y}</option>
             ))}
-          </div>
+          </select>
+        </div>
 
-          {/* Individual year chips */}
-          {selectedDecade && decadeYears.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-3">
-              <button
-                onClick={() => { setSelectedYear(null); setPage(0); }}
-                className={`px-3 py-1.5 font-label text-[11px] tracking-wider transition-all border
-                  ${!selectedYear ? "bg-primary/20 text-primary border-primary/30" : "bg-surface-container-high text-on-surface/40 hover:text-on-surface border-transparent"}`}
-              >
-                All
-              </button>
-              {decadeYears.map(y => (
-                <button
-                  key={y}
-                  onClick={() => { setSelectedYear(y); setPage(0); }}
-                  className={`px-3 py-1.5 font-label text-[11px] tracking-wider transition-all border
-                    ${selectedYear === y ? "bg-primary/20 text-primary border-primary/30" : "bg-surface-container-high text-on-surface/40 hover:text-on-surface border-transparent"}`}
+        {/* Case Code Checkboxes */}
+        <div>
+          <label className="font-label text-[10px] uppercase tracking-[0.15em] text-on-surface/40 mb-2 block">Case</label>
+          <div className="flex flex-wrap gap-3">
+            {CASE_CODES.map(code => {
+              const isChecked = selectedCases.includes(code);
+              return (
+                <label
+                  key={code}
+                  className={`flex items-center gap-2.5 px-4 py-2.5 cursor-pointer transition-all duration-200 select-none border
+                    ${isChecked
+                      ? "bg-primary-container/20 border-primary-container/50 text-on-surface"
+                      : "bg-surface-container-high border-white/5 text-on-surface/50 hover:text-on-surface hover:border-white/15"
+                    }`}
                 >
-                  {y}
-                </button>
-              ))}
-            </div>
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => toggleCase(code)}
+                    className="sr-only"
+                  />
+                  <span className={`w-4 h-4 border-2 flex items-center justify-center transition-all shrink-0
+                    ${isChecked ? "bg-primary-container border-primary-container" : "border-on-surface/20 bg-transparent"}`}
+                  >
+                    {isChecked && (
+                      <svg className="w-2.5 h-2.5 text-on-primary-container" viewBox="0 0 12 12" fill="none">
+                        <path d="M2 6l3 3 5-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
+                  </span>
+                  <span className="font-headline text-sm font-bold tracking-wider">Case {code}</span>
+                  <span className="font-label text-[9px] text-on-surface/30 tracking-wider">{CASE_RANGES[code]}</span>
+                </label>
+              );
+            })}
+          </div>
+          {selectedCases.length > 0 && (
+            <button
+              onClick={() => { setSelectedCases([]); setPage(0); }}
+              className="mt-2 text-primary font-label text-[10px] uppercase tracking-wider hover:text-primary-container transition-colors"
+            >
+              Clear Case Filter
+            </button>
           )}
         </div>
 
@@ -413,7 +453,7 @@ export default function DiscoverPage() {
             <>
               Showing <span className="text-on-surface font-bold">{(page * PAGE_SIZE + 1).toLocaleString()}–{Math.min((page + 1) * PAGE_SIZE, totalCount).toLocaleString()}</span>{" "}
               of <span className="text-on-surface font-bold">{totalCount.toLocaleString()}</span> models
-              {(debouncedSearch || selectedDecade || selectedYear || debouncedSeries) && <span className="text-primary ml-2">(filtered)</span>}
+              {(debouncedSearch || selectedYear || debouncedSeries || selectedCases.length > 0) && <span className="text-primary ml-2">(filtered)</span>}
             </>
           )}
         </p>
@@ -480,9 +520,16 @@ export default function DiscoverPage() {
                   {/* Gradient overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent opacity-60 pointer-events-none" />
 
-                  {/* Year badge */}
-                  <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-sm text-on-surface font-headline text-[11px] font-bold px-2.5 py-1 tracking-wider z-10">
-                    {model.year}
+                  {/* Year + Case badges */}
+                  <div className="absolute bottom-3 left-3 flex items-center gap-1.5 z-10">
+                    <div className="bg-black/70 backdrop-blur-sm text-on-surface font-headline text-[11px] font-bold px-2.5 py-1 tracking-wider">
+                      {model.year}
+                    </div>
+                    {model.case_code && (
+                      <div className="bg-primary-container/80 backdrop-blur-sm text-on-primary-container font-headline text-[10px] font-bold px-2 py-1 tracking-widest">
+                        Case {model.case_code}
+                      </div>
+                    )}
                   </div>
 
                   {/* Status badges */}
@@ -513,10 +560,10 @@ export default function DiscoverPage() {
                     {model.model_name}
                   </h3>
 
-                  {model.series && (
+                  {model.series && cleanSeries(model.series) && (
                     <div className="flex items-center gap-1.5 text-primary/70 mb-1">
                       <Layers size={11} className="shrink-0" />
-                      <span className="font-label text-[10px] tracking-wider uppercase truncate font-bold">{model.series}</span>
+                      <span className="font-label text-[10px] tracking-wider uppercase truncate font-bold">{cleanSeries(model.series)}</span>
                       {model.series_number && <span className="font-label text-[9px] text-on-surface/25 shrink-0">({model.series_number})</span>}
                     </div>
                   )}
@@ -660,10 +707,10 @@ export default function DiscoverPage() {
                 </button>
 
                 {/* Series label */}
-                {selectedModel.series && (
+                {selectedModel.series && cleanSeries(selectedModel.series) && (
                   <div className="flex items-center gap-3 mb-4">
                     <div className="h-[2px] w-10 bg-primary" />
-                    <span className="font-label text-[11px] uppercase tracking-[0.4em] text-primary font-bold">{selectedModel.series}</span>
+                    <span className="font-label text-[11px] uppercase tracking-[0.4em] text-primary font-bold">{cleanSeries(selectedModel.series)}</span>
                   </div>
                 )}
 
@@ -678,6 +725,7 @@ export default function DiscoverPage() {
                   {selectedModel.toy_number && <InfoCell label="Toy Number" value={selectedModel.toy_number} icon={<Hash size={13} />} />}
                   {selectedModel.collector_number && <InfoCell label="Collector #" value={selectedModel.collector_number} icon={<Tag size={13} />} />}
                   {selectedModel.series_number && <InfoCell label="Series #" value={selectedModel.series_number} icon={<Layers size={13} />} />}
+                  {selectedModel.case_code && <InfoCell label="Case" value={`Case ${selectedModel.case_code} (${CASE_RANGES[selectedModel.case_code] || ""})`} icon={<Database size={13} />} />}
                   {selectedModel.color && (
                     <div className="bg-surface-container p-3 border border-white/5">
                       <div className="flex items-center gap-1.5 mb-1.5">
