@@ -1,6 +1,8 @@
 "use client";
 
-import { useStore } from "@/store/useStore";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useCollectionStore } from "@/store/useCollectionStore";
+import { useIsoStore } from "@/store/useIsoStore";
 import { useAdminStore } from "@/store/useAdminStore";
 import Image from "next/image";
 import Link from "next/link";
@@ -11,7 +13,9 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function ProfilePage() {
-  const { user, models, isoModels, signOut, isLoaded, initializeAuth } = useStore();
+  const { user, signOut, isLoaded } = useAuthStore();
+  const { models } = useCollectionStore();
+  const { isoModels } = useIsoStore();
   const { isAdmin } = useAdminStore();
   const router = useRouter();
 
@@ -70,7 +74,7 @@ export default function ProfilePage() {
     // Force re-fetch user so the updated metadata is reflected
     const { data: refreshed } = await supabase.auth.getUser();
     if (refreshed.user) {
-      useStore.setState({ user: refreshed.user });
+      useAuthStore.setState({ user: refreshed.user });
     }
     router.refresh();
   };

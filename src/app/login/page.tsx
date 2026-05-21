@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
-import { useStore } from '@/store/useStore'
+import { useAuthStore } from '@/store/useAuthStore'
 import { toast } from 'sonner'
 
 export default function LoginPage() {
@@ -20,7 +20,7 @@ export default function LoginPage() {
   const [resetEmail, setResetEmail] = useState('')
   const [resetLoading, setResetLoading] = useState(false)
   const [resetSent, setResetSent] = useState(false)
-  const resendConfirmationEmail = useStore(state => state.resendConfirmationEmail)
+  const resendConfirmationEmail = useAuthStore(state => state.resendConfirmationEmail)
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault()

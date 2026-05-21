@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useStore } from "@/store/useStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import { useAdminStore, UserRole } from "@/store/useAdminStore";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -27,7 +27,7 @@ import { toast } from "sonner";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function AdminPage() {
-  const { user, isLoaded } = useStore();
+  const { user, isLoaded } = useAuthStore();
   const {
     isAdmin,
     users,

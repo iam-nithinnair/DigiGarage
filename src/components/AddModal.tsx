@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useStore } from "@/store/useStore";
+import { useCollectionStore } from "@/store/useCollectionStore";
 import { X, DollarSign, Tag, Award, MapPin, Upload, Loader2, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
@@ -12,7 +12,7 @@ interface AddModalProps {
 }
 
 export default function AddModal({ isOpen, onClose }: AddModalProps) {
-  const { addModel } = useStore();
+  const { addModel } = useCollectionStore();
   const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",

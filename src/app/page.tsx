@@ -2,13 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useStore } from "@/store/useStore";
+import { useCollectionStore } from "@/store/useCollectionStore";
+import { useIsoStore } from "@/store/useIsoStore";
 import ModelCard from "@/components/ModelCard";
 import { ArrowRight } from "lucide-react";
 
 export default function Page() {
-  const models = useStore((state) => state.models);
-  const isoModels = useStore((state) => state.isoModels);
+  const models = useCollectionStore((state) => state.models);
+  const isoModels = useIsoStore((state) => state.isoModels);
 
   const collectionSlice = models.slice(0, 3);
   const isoSlice = isoModels.slice(0, 2);

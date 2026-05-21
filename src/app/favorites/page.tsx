@@ -1,6 +1,6 @@
 "use client";
 
-import { useStore } from "@/store/useStore";
+import { useCollectionStore } from "@/store/useCollectionStore";
 import ModelCard from "@/components/ModelCard";
 import Image from "next/image";
 import { Download, Heart, Maximize2, BarChart3, PlusCircle } from "lucide-react";
@@ -8,8 +8,8 @@ import { toast } from "sonner";
 import AuthGuard from "@/components/AuthGuard";
 
 export default function FavoritesPage() {
-  const models = useStore(state => state.models);
-  const toggleFavorite = useStore(state => state.toggleFavorite);
+  const models = useCollectionStore(state => state.models);
+  const toggleFavorite = useCollectionStore(state => state.toggleFavorite);
   const favorites = models.filter(m => m.isFavorite);
 
   const heroFavorite = favorites[0];

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { useStore, Model } from "@/store/useStore";
+import { useCollectionStore, Model } from "@/store/useCollectionStore";
 import { Heart, Trash2, BadgeCheck, MapPin, Tag } from "lucide-react";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
@@ -11,7 +11,7 @@ interface ModelCardProps {
 }
 
 export default function ModelCard({ model }: ModelCardProps) {
-  const { toggleFavorite, removeModel } = useStore();
+  const { toggleFavorite, removeModel } = useCollectionStore();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   return (

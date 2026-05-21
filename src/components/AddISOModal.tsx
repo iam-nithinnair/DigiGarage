@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useStore } from "@/store/useStore";
+import { useIsoStore } from "@/store/useIsoStore";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -11,7 +11,7 @@ interface AddISOModalProps {
 }
 
 export default function AddISOModal({ isOpen, onClose }: AddISOModalProps) {
-  const { addISOModel } = useStore();
+  const { addIsoModel } = useIsoStore();
   const [name, setName] = useState("");
   const [targetPrice, setTargetPrice] = useState("");
   const [rarity, setRarity] = useState("Common");
@@ -32,7 +32,7 @@ export default function AddISOModal({ isOpen, onClose }: AddISOModalProps) {
     if (!name || !targetPrice) return;
 
     try {
-      await addISOModel({
+      await addIsoModel({
         name,
         targetprice: targetPrice,
         rarity,

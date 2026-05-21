@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useStore } from "@/store/useStore";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useCollectionStore } from "@/store/useCollectionStore";
+import { useIsoStore } from "@/store/useIsoStore";
 import { createClient } from "@/lib/supabase/client";
 import {
   Search, Plus, Loader2, ChevronLeft, ChevronRight,
@@ -99,7 +101,9 @@ function getSupabase() {
 /* ── Page Component ────────────────────────────────────────── */
 
 export default function DiscoverPage() {
-  const { addModel, models, user, addISOModel, isoModels } = useStore();
+  const { user } = useAuthStore();
+  const { addModel, models } = useCollectionStore();
+  const { addIsoModel, isoModels } = useIsoStore();
   const gridRef = useRef<HTMLDivElement>(null);
 
   /* Data state */
@@ -271,7 +275,7 @@ export default function DiscoverPage() {
   const handleAddISO = async (model: CatalogModel) => {
     if (!user) { toast.error("Sign in to add to wishlist"); return; }
     try {
-      await addISOModel({ name: model.model_name, targetprice: "TBD", rarity: "Common" });
+      await addIsoModel({ name: model.model_name, targetprice: "TBD", rarity: "Common" });
       toast.success(`${model.model_name} wishlisted!`);
     } catch (err) {
       console.error("ISO add failed:", err);

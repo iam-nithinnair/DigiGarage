@@ -1,13 +1,13 @@
 "use client";
 
-import { useStore, ISOModel } from "@/store/useStore";
+import { useIsoStore, ISOModel } from "@/store/useIsoStore";
 
 interface ISOCardProps {
   iso: ISOModel;
 }
 
 export default function ISOCard({ iso }: ISOCardProps) {
-  const { removeISOModel } = useStore();
+  const { removeIsoModel } = useIsoStore();
 
   return (
     <div className="bg-surface p-8 flex flex-col md:flex-row justify-between items-center gap-8 hover:bg-surface-container-high transition-colors group">
@@ -19,7 +19,7 @@ export default function ISOCard({ iso }: ISOCardProps) {
         </div>
       </div>
       <button 
-        onClick={() => removeISOModel(iso.id)}
+        onClick={() => removeIsoModel(iso.id)}
         aria-label={`Remove ${iso.name} from wishlist`}
         className="px-6 py-3 border border-outline-variant/30 hover:bg-error hover:border-error hover:text-white transition-all font-headline uppercase text-xs tracking-widest font-bold"
       >

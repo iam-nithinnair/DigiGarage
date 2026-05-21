@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useStore } from "@/store/useStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import { useAdminStore } from "@/store/useAdminStore";
 import { Home, LayoutGrid, List, Heart, Search, User, Terminal, LogOut, Menu, X, Shield } from "lucide-react";
 import { toast } from "sonner";
@@ -19,7 +19,7 @@ const navLinks = [
 
 export default function TopNavBar() {
   const pathname = usePathname();
-  const { isLoaded, fetchData, user, signOut, initializeAuth } = useStore();
+  const { isLoaded, user, signOut, initializeAuth } = useAuthStore();
   const { isAdmin, fetchCurrentUserRole } = useAdminStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 

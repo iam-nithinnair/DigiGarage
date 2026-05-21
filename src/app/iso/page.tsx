@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useStore } from "@/store/useStore";
+import { useIsoStore } from "@/store/useIsoStore";
 import Image from "next/image";
 import AddISOModal from "@/components/AddISOModal";
 import { Plus, Trash2, Info } from "lucide-react";
@@ -9,8 +9,8 @@ import AuthGuard from "@/components/AuthGuard";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function ISOPage() {
-  const isoModels = useStore(state => state.isoModels);
-  const removeISOModel = useStore(state => state.removeISOModel);
+  const isoModels = useIsoStore(state => state.isoModels);
+  const removeIsoModel = useIsoStore(state => state.removeIsoModel);
   const [isModalOpen, setModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
@@ -138,7 +138,7 @@ export default function ISOPage() {
         confirmLabel="Remove"
         onConfirm={() => {
           if (deleteTarget) {
-            removeISOModel(deleteTarget.id);
+            removeIsoModel(deleteTarget.id);
             setDeleteTarget(null);
           }
         }}

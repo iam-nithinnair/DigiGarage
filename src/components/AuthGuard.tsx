@@ -1,6 +1,6 @@
 "use client";
 
-import { useStore } from "@/store/useStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import Link from "next/link";
 import { Loader2, LogIn } from "lucide-react";
 
@@ -11,7 +11,7 @@ interface AuthGuardProps {
 }
 
 export default function AuthGuard({ children, requireAuth = true }: AuthGuardProps) {
-  const { user, isLoaded } = useStore();
+  const { user, isLoaded } = useAuthStore();
 
   if (!isLoaded) {
     return (

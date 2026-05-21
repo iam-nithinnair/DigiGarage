@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useStore } from "@/store/useStore";
+import { useCollectionStore } from "@/store/useCollectionStore";
 import ModelCard from "@/components/ModelCard";
 import AddModal from "@/components/AddModal";
 import AuthGuard from "@/components/AuthGuard";
 import { Plus, ChevronDown } from "lucide-react";
 
 export default function CollectionPage() {
-  const models = useStore(state => state.models);
+  const models = useCollectionStore(state => state.models);
   const [isAddModalOpen, setAddModalOpen] = useState(false);
   
   const [sortParam, setSortParam] = useState("Name: A-Z");
