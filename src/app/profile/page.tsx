@@ -4,15 +4,20 @@ import { useStore } from "@/store/useStore";
 import { useAdminStore } from "@/store/useAdminStore";
 import Image from "next/image";
 import Link from "next/link";
-import { Grid3X3, ShoppingCart, Radar, LogOut, Edit3, ChevronRight, Wallet, Shield } from "lucide-react";
+import { Grid3X3, ShoppingCart, Radar, LogOut, Edit3, ChevronRight, Wallet, Shield, Check, X, Loader2 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function ProfilePage() {
   const { user, models, isoModels, signOut, isLoaded, initializeAuth } = useStore();
   const { isAdmin } = useAdminStore();
   const router = useRouter();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
 
   useEffect(() => {
     if (isLoaded && !user) {
@@ -23,6 +28,54 @@ export default function ProfilePage() {
   if (!user) return null;
 
   const displayName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Curator';
+
+  const handleEditStart = () => {
+    setEditName(user.user_metadata?.full_name || "");
+    setIsEditing(true);
+  };
+
+  const handleEditCancel = () => {
+    setIsEditing(false);
+    setEditName("");
+  };
+
+  const handleEditSave = async () => {
+    if (!editName.trim()) {
+      toast.error("Display name cannot be empty.");
+      return;
+    }
+    setSavingProfile(true);
+    const supabase = createClient();
+
+    // Update Supabase Auth user metadata (so user_metadata.full_name updates)
+    const { error: authError } = await supabase.auth.updateUser({
+      data: { full_name: editName.trim() },
+    });
+
+    // Update profiles table
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ full_name: editName.trim() })
+      .eq("id", user.id);
+
+    setSavingProfile(false);
+
+    if (authError || profileError) {
+      toast.error("Failed to update profile. Please try again.");
+      return;
+    }
+
+    toast.success("Profile updated successfully.");
+    setIsEditing(false);
+    // Refresh user data in the auth listener
+    router.refresh();
+    // Force re-fetch user so the updated metadata is reflected
+    supabase.auth.getUser().then(({ data: { user: refreshedUser } }) => {
+      if (refreshedUser) {
+        useStore.setState({ user: refreshedUser });
+      }
+    });
+  };
   const recentAcquisitions = models.slice(0, 2);
   
   // Calculate total acquisition cost
@@ -47,14 +100,60 @@ export default function ProfilePage() {
           </div>
           <div className="flex flex-col flex-grow justify-center sm:justify-start h-full py-4 text-center sm:text-left z-10">
             <div className="bg-surface-container-highest text-on-surface-variant font-label text-[10px] uppercase tracking-[0.1em] px-3 py-1 rounded-none self-center sm:self-start mb-4">Master Curator</div>
-            <h2 className="font-headline text-3xl md:text-5xl font-bold text-on-surface mb-2 uppercase tracking-tight">{displayName}</h2>
-            <p className="font-body text-on-surface/40 mb-8">Member since {new Date(user.created_at).getFullYear()} • {user.email}</p>
-            <div className="mt-auto flex gap-4 justify-center sm:justify-start">
-              <button className="bg-surface-container-high text-on-surface-variant font-label text-xs uppercase tracking-wider px-6 py-3 rounded-none hover:bg-surface-container-highest transition-colors border border-white/5 flex items-center gap-2">
-                <Edit3 size={14} />
-                Edit Profile
-              </button>
-            </div>
+
+            {isEditing ? (
+              <>
+                <div className="mb-4">
+                  <label className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant block mb-2" htmlFor="edit-name">Display Name</label>
+                  <input
+                    id="edit-name"
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full max-w-sm bg-surface-container-lowest border-0 border-b-2 border-outline-variant/15 text-on-surface py-3 px-4 focus:ring-0 focus:border-primary transition-all duration-300 placeholder:text-on-surface-variant/30 font-headline text-2xl font-bold outline-none"
+                    placeholder="Your display name"
+                    autoFocus
+                  />
+                </div>
+                <div className="mb-2">
+                  <span className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant block mb-1">Email (read-only)</span>
+                  <span className="font-body text-on-surface/60">{user.email}</span>
+                </div>
+                <p className="font-body text-on-surface/40 mb-6">Member since {new Date(user.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
+                <div className="mt-auto flex gap-3 justify-center sm:justify-start">
+                  <button
+                    onClick={handleEditSave}
+                    disabled={savingProfile}
+                    className="bg-primary-container text-on-primary-container font-label text-xs uppercase tracking-wider px-6 py-3 rounded-none hover:bg-primary transition-colors border border-white/5 flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {savingProfile ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                    {savingProfile ? "Saving..." : "Save"}
+                  </button>
+                  <button
+                    onClick={handleEditCancel}
+                    disabled={savingProfile}
+                    className="bg-surface-container-high text-on-surface-variant font-label text-xs uppercase tracking-wider px-6 py-3 rounded-none hover:bg-surface-container-highest transition-colors border border-white/5 flex items-center gap-2 disabled:opacity-50"
+                  >
+                    <X size={14} />
+                    Cancel
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 className="font-headline text-3xl md:text-5xl font-bold text-on-surface mb-2 uppercase tracking-tight">{displayName}</h2>
+                <p className="font-body text-on-surface/40 mb-8">Member since {new Date(user.created_at).getFullYear()} &bull; {user.email}</p>
+                <div className="mt-auto flex gap-4 justify-center sm:justify-start">
+                  <button
+                    onClick={handleEditStart}
+                    className="bg-surface-container-high text-on-surface-variant font-label text-xs uppercase tracking-wider px-6 py-3 rounded-none hover:bg-surface-container-highest transition-colors border border-white/5 flex items-center gap-2"
+                  >
+                    <Edit3 size={14} />
+                    Edit Profile
+                  </button>
+                </div>
+              </>
+            )}
           </div>
           {/* Decorative background element */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary-container rounded-full blur-[100px] opacity-10 pointer-events-none translate-x-1/2 -translate-y-1/2"></div>

@@ -1,0 +1,41 @@
+-- ============================================================
+-- Migration 0004: Add `avatar_url` column to `profiles`
+-- DigiGarage — Phase 1: Database & Auth Hardening
+--
+-- Purpose:
+--   Adds an optional `avatar_url` TEXT column to the profiles table
+--   so users can store a link to their profile picture. This supports
+--   the upcoming profile customization feature in the UI.
+--
+--   The column is nullable with no default — users without an avatar
+--   will have NULL, and the frontend falls back to a generated initial.
+--
+-- Idempotency:
+--   `ADD COLUMN IF NOT EXISTS` is a no-op when the column already exists.
+--
+-- Run in: Supabase SQL Editor (Dashboard > SQL Editor)
+-- ============================================================
+
+-- Add the avatar_url column (nullable TEXT, no default)
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+
+-- ============================================================
+-- Optional: If you later want to also update the handle_new_user()
+-- trigger to accept avatar_url from signup metadata, run:
+--
+-- CREATE OR REPLACE FUNCTION public.handle_new_user()
+-- RETURNS TRIGGER AS $$
+-- BEGIN
+--   INSERT INTO public.profiles (id, email, full_name, avatar_url, role)
+--   VALUES (
+--     NEW.id,
+--     NEW.email,
+--     NEW.raw_user_meta_data->>'full_name',
+--     NEW.raw_user_meta_data->>'avatar_url',
+--     'user'
+--   );
+--   RETURN NEW;
+-- END;
+-- $$ LANGUAGE plpgsql SECURITY DEFINER;
+-- ============================================================

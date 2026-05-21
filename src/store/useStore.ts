@@ -44,6 +44,7 @@ interface CollectionState {
 }
 
 let authInitialized = false;
+let intentionalSignOut = false;
 
 export const useStore = create<CollectionState>((set, get) => {
   const getSupabase = () => createClient();
@@ -77,6 +78,15 @@ export const useStore = create<CollectionState>((set, get) => {
           get().fetchData();
         } else if (event === 'SIGNED_OUT') {
           set({ user: null, models: [], isoModels: [] });
+          // Redirect to login with a toast if this was NOT an intentional sign-out
+          if (!intentionalSignOut) {
+            toast.error('Your session has expired. Please sign in again.');
+            if (typeof window !== 'undefined') {
+              window.location.href = `${window.location.origin}/DigiGarage/login`;
+            }
+          }
+          // Reset the flag for next time
+          intentionalSignOut = false;
         }
       });
     },
@@ -252,8 +262,10 @@ export const useStore = create<CollectionState>((set, get) => {
     },
     signOut: async () => {
       const supabase = getSupabase();
+      intentionalSignOut = true;
       const { error } = await supabase.auth.signOut();
       if (error) {
+        intentionalSignOut = false;
         toast.error("Sign out failed. Please try again.");
         return;
       }
