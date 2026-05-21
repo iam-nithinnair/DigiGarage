@@ -67,14 +67,12 @@ export default function ProfilePage() {
 
     toast.success("Profile updated successfully.");
     setIsEditing(false);
-    // Refresh user data in the auth listener
-    router.refresh();
     // Force re-fetch user so the updated metadata is reflected
-    supabase.auth.getUser().then(({ data: { user: refreshedUser } }) => {
-      if (refreshedUser) {
-        useStore.setState({ user: refreshedUser });
-      }
-    });
+    const { data: refreshed } = await supabase.auth.getUser();
+    if (refreshed.user) {
+      useStore.setState({ user: refreshed.user });
+    }
+    router.refresh();
   };
   const recentAcquisitions = models.slice(0, 2);
   

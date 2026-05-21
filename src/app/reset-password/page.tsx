@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
+import { AuthChangeEvent } from "@supabase/supabase-js";
 import { KeyRound, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,16 +22,18 @@ export default function ResetPasswordPage() {
   // We wait for PASSWORD_RECOVERY event before showing the form.
   useEffect(() => {
     const supabase = createClient();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent) => {
       if (event === "PASSWORD_RECOVERY") {
         setReady(true);
       }
     });
 
     // Also check if session already exists (user might have refreshed)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setReady(true);
-    });
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) setReady(true);
+    };
+    checkSession();
 
     return () => subscription.unsubscribe();
   }, []);
