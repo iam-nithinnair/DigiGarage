@@ -1,13 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { useCollectionStore, Model } from "@/store/useCollectionStore";
 import { Heart, Trash2, BadgeCheck, MapPin, Tag, ImageOff } from "lucide-react";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
 interface ModelCardProps {
   model: Model;
+}
+
+/** Strip wiki markup artifacts from series names stored in user collections */
+function cleanSeries(raw: string): string {
+  if (!raw) return "";
+  return raw
+    .replace(/\{\{[^}]*\}\}/g, "")              // {{NM|2025}}, {{KR}}, etc.
+    .replace(/bgcolor="[^"]*"\s*\|?\s*/gi, "")   // bgcolor="#32CD32" |
+    .replace(/\[\[[^\]]*\|([^\]]*)\]\]/g, "$1")  // [[Link|Text]] → Text
+    .replace(/\[\[([^\]]*)\]\]/g, "$1")           // [[Text]] → Text
+    .replace(/'''?/g, "")                          // bold/italic wiki markup
+    .replace(/\s{2,}/g, " ")
+    .trim();
 }
 
 function ImagePlaceholder() {
@@ -24,17 +36,19 @@ export default function ModelCard({ model }: ModelCardProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [imgFailed, setImgFailed] = useState(false);
 
+  const seriesDisplay = cleanSeries(model.series);
+
   return (
     <>
       <article className="group bg-surface-container-low rounded-xl overflow-hidden transition-all duration-300 hover:translate-y-[-4px] flex flex-col h-full border border-white/5">
         <div className="relative aspect-[4/3] overflow-hidden bg-surface-container-lowest shrink-0">
           {model.image && !imgFailed ? (
-            <Image
-              fill
-              alt={model.name}
-              className="object-cover transition-transform duration-500 group-hover:scale-110"
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
               src={model.image}
+              alt={model.name}
               onError={() => setImgFailed(true)}
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             />
           ) : (
             <ImagePlaceholder />
@@ -58,11 +72,13 @@ export default function ModelCard({ model }: ModelCardProps) {
             )}
           </div>
 
-          <div className="absolute bottom-4 left-4 z-10">
-            <span className="bg-surface-bright text-on-surface font-label text-[10px] px-2 py-1 tracking-wider uppercase">
-              {model.series}
-            </span>
-          </div>
+          {seriesDisplay && (
+            <div className="absolute bottom-4 left-4 z-10">
+              <span className="bg-surface-bright text-on-surface font-label text-[10px] px-2 py-1 tracking-wider uppercase">
+                {seriesDisplay}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="p-6 flex-grow flex flex-col">

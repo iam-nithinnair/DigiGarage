@@ -7,6 +7,19 @@ import AddModal from "@/components/AddModal";
 import AuthGuard from "@/components/AuthGuard";
 import { Plus, ChevronDown } from "lucide-react";
 
+/** Strip wiki markup artifacts from series names stored in user collections */
+function cleanSeries(raw: string): string {
+  if (!raw) return "";
+  return raw
+    .replace(/\{\{[^}]*\}\}/g, "")
+    .replace(/bgcolor="[^"]*"\s*\|?\s*/gi, "")
+    .replace(/\[\[[^\]]*\|([^\]]*)\]\]/g, "$1")
+    .replace(/\[\[([^\]]*)\]\]/g, "$1")
+    .replace(/'''?/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 export default function CollectionPage() {
   const models = useCollectionStore(state => state.models);
   const [isAddModalOpen, setAddModalOpen] = useState(false);
@@ -48,8 +61,14 @@ export default function CollectionPage() {
     setManFilter(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m]);
   };
 
-  // Dynamic series from actual data
-  const allSeries = Array.from(new Set(models.map(m => m.series).filter(Boolean)));
+  // Dynamic series from actual data — deduplicate on cleaned names
+  const seriesMap = new Map<string, string>(); // cleaned → raw (first occurrence)
+  models.forEach(m => {
+    if (!m.series) return;
+    const cleaned = cleanSeries(m.series);
+    if (cleaned && !seriesMap.has(cleaned)) seriesMap.set(cleaned, m.series);
+  });
+  const allSeries = Array.from(seriesMap.entries()); // [cleaned, raw][]
 
   return (
     <AuthGuard>
@@ -84,10 +103,10 @@ export default function CollectionPage() {
           <div>
             <h3 className="font-label text-[10px] uppercase tracking-[0.2em] text-on-surface/40 mb-6">Series</h3>
             <div className="space-y-3">
-              {allSeries.map(s => (
-                <label key={s} className="flex items-center gap-3 cursor-pointer group">
-                  <input type="checkbox" checked={seriesFilter.includes(s)} onChange={() => toggleSeries(s)} className="w-5 h-5 bg-surface-container-high border-none text-primary-container rounded-sm focus:ring-offset-background" />
-                  <span className="font-headline text-sm group-hover:text-primary transition-colors">{s}</span>
+              {allSeries.map(([cleaned, raw]) => (
+                <label key={raw} className="flex items-center gap-3 cursor-pointer group">
+                  <input type="checkbox" checked={seriesFilter.includes(raw)} onChange={() => toggleSeries(raw)} className="w-5 h-5 bg-surface-container-high border-none text-primary-container rounded-sm focus:ring-offset-background" />
+                  <span className="font-headline text-sm group-hover:text-primary transition-colors">{cleaned}</span>
                 </label>
               ))}
             </div>
