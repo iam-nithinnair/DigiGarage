@@ -440,6 +440,12 @@ export default function DiscoverPage() {
                       referrerPolicy="no-referrer"
                       loading="lazy"
                       onError={() => setFailedImages(prev => new Set(prev).add(model.image_filename))}
+                      onLoad={(e) => {
+                        const img = e.target as HTMLImageElement;
+                        if (img.naturalWidth < 150 || img.naturalHeight < 150) {
+                          setFailedImages(prev => new Set(prev).add(model.image_filename));
+                        }
+                      }}
                       className="absolute inset-0 w-full h-full object-contain p-4 transition-transform duration-500 group-hover:scale-110"
                     />
                   ) : (
@@ -613,6 +619,12 @@ export default function DiscoverPage() {
                     alt={selectedModel.model_name}
                     referrerPolicy="no-referrer"
                     onError={() => setFailedImages(prev => new Set(prev).add(selectedModel.image_filename))}
+                    onLoad={(e) => {
+                      const img = e.target as HTMLImageElement;
+                      if (img.naturalWidth < 150 || img.naturalHeight < 150) {
+                        setFailedImages(prev => new Set(prev).add(selectedModel.image_filename));
+                      }
+                    }}
                     className="w-full h-full object-contain transition-transform duration-700 group-hover/img:scale-105"
                   />
                 ) : (

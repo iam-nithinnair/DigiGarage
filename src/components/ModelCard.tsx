@@ -48,6 +48,15 @@ export default function ModelCard({ model }: ModelCardProps) {
               src={model.image}
               alt={model.name}
               onError={() => setImgFailed(true)}
+              onLoad={(e) => {
+                const img = e.target as HTMLImageElement;
+                // Fandom CDN returns a tiny placeholder.webp (≈520 bytes) for
+                // deleted/missing images — HTTP 200-ish with valid image data,
+                // so onError won't fire. Detect by checking natural dimensions.
+                if (img.naturalWidth < 150 || img.naturalHeight < 150) {
+                  setImgFailed(true);
+                }
+              }}
               className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             />
           ) : (
