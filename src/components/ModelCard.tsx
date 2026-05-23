@@ -5,8 +5,15 @@ import { useCollectionStore, Model } from "@/store/useCollectionStore";
 import { Heart, Trash2, BadgeCheck, MapPin, Tag, ImageOff } from "lucide-react";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
+interface ResolvedImagePair {
+  url: string;      // full-resolution URL
+  thumburl: string;  // thumbnail URL (scale-to-width-down/400)
+}
+
 interface ModelCardProps {
   model: Model;
+  /** Freshly-resolved image URLs from Fandom API */
+  resolvedImage?: ResolvedImagePair;
 }
 
 /** Strip wiki markup artifacts from series names stored in user collections */
@@ -18,8 +25,18 @@ function cleanSeries(raw: string): string {
     .replace(/\[\[[^\]]*\|([^\]]*)\]\]/g, "$1")  // [[Link|Text]] → Text
     .replace(/\[\[([^\]]*)\]\]/g, "$1")           // [[Text]] → Text
     .replace(/'''?/g, "")                          // bold/italic wiki markup
+    .replace(/\}\}+/g, "")                        // orphaned closing braces
+    .replace(/\{\{+/g, "")                        // orphaned opening braces
     .replace(/\s{2,}/g, " ")
-    .trim();
+    .trim()
+    .replace(/^\d+$/, "");                         // pure numbers are artifacts, not series names
+}
+
+/** Detect Fandom CDN's placeholder images (valid image data, HTTP 200) */
+function isFandomPlaceholder(img: HTMLImageElement): boolean {
+  const isTiny = img.naturalWidth < 150 || img.naturalHeight < 150;
+  const is300x171 = img.naturalWidth === 300 && img.naturalHeight === 171;
+  return isTiny || is300x171;
 }
 
 function ImagePlaceholder() {
@@ -31,10 +48,53 @@ function ImagePlaceholder() {
   );
 }
 
-export default function ModelCard({ model }: ModelCardProps) {
+export default function ModelCard({ model, resolvedImage }: ModelCardProps) {
   const { toggleFavorite, removeModel } = useCollectionStore();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [imgFailed, setImgFailed] = useState(false);
+  // Track which URL variant we're currently trying
+  const [urlAttempt, setUrlAttempt] = useState<"thumb" | "full" | "stored">("thumb");
+
+  // Build the list of URLs to try in order:
+  //  1. thumburl (smaller, faster) — may return 300×171 placeholder
+  //  2. full url (larger, reliable) — may return 300×171 placeholder for different images
+  //  3. stored model.image (original URL from when model was added)
+  function getCurrentImageUrl(): string {
+    if (resolvedImage) {
+      if (urlAttempt === "thumb" && resolvedImage.thumburl) return resolvedImage.thumburl;
+      if (urlAttempt === "full" && resolvedImage.url) return resolvedImage.url;
+    }
+    // "stored" or no resolved image available
+    return model.image || "";
+  }
+
+  const displayImage = getCurrentImageUrl();
+
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.target as HTMLImageElement;
+    if (isFandomPlaceholder(img)) {
+      // Current URL returned a placeholder — try the next variant
+      if (urlAttempt === "thumb" && resolvedImage?.url) {
+        setUrlAttempt("full");
+      } else if (urlAttempt === "full" && model.image) {
+        setUrlAttempt("stored");
+      } else {
+        // All variants exhausted
+        setImgFailed(true);
+      }
+    }
+  };
+
+  const handleImageError = () => {
+    // Network/404 error — try next variant
+    if (urlAttempt === "thumb" && resolvedImage?.url) {
+      setUrlAttempt("full");
+    } else if (urlAttempt === "full" && model.image) {
+      setUrlAttempt("stored");
+    } else {
+      setImgFailed(true);
+    }
+  };
 
   const seriesDisplay = cleanSeries(model.series);
 
@@ -42,21 +102,14 @@ export default function ModelCard({ model }: ModelCardProps) {
     <>
       <article className="group bg-surface-container-low rounded-xl overflow-hidden transition-all duration-300 hover:translate-y-[-4px] flex flex-col h-full border border-white/5">
         <div className="relative aspect-[4/3] overflow-hidden bg-surface-container-lowest shrink-0">
-          {model.image && !imgFailed ? (
+          {displayImage && !imgFailed ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={model.image}
+              key={displayImage}
+              src={displayImage}
               alt={model.name}
-              onError={() => setImgFailed(true)}
-              onLoad={(e) => {
-                const img = e.target as HTMLImageElement;
-                // Fandom CDN returns a tiny placeholder.webp (≈520 bytes) for
-                // deleted/missing images — HTTP 200-ish with valid image data,
-                // so onError won't fire. Detect by checking natural dimensions.
-                if (img.naturalWidth < 150 || img.naturalHeight < 150) {
-                  setImgFailed(true);
-                }
-              }}
+              onError={handleImageError}
+              onLoad={handleImageLoad}
               className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             />
           ) : (

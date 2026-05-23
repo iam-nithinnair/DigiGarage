@@ -66,9 +66,13 @@ function cleanSeries(raw: string): string {
     .replace(/\[\[[^\]]*\|([^\]]*)\]\]/g, "$1") // [[Link|Text]] → Text
     .replace(/\[\[([^\]]*)\]\]/g, "$1")        // [[Text]] → Text
     .replace(/'''?/g, "")                       // remove bold/italic wiki markup
+    .replace(/\}\}+/g, "")                     // orphaned closing braces
+    .replace(/\{\{+/g, "")                     // orphaned opening braces
     .trim();
   // Collapse multiple spaces
   s = s.replace(/\s{2,}/g, " ");
+  // Pure numbers are wiki artifacts, not series names
+  if (/^\d+$/.test(s)) return "";
   return s;
 }
 
@@ -442,7 +446,7 @@ export default function DiscoverPage() {
                       onError={() => setFailedImages(prev => new Set(prev).add(model.image_filename))}
                       onLoad={(e) => {
                         const img = e.target as HTMLImageElement;
-                        if (img.naturalWidth < 150 || img.naturalHeight < 150) {
+                        if (img.naturalWidth < 150 || img.naturalHeight < 150 || (img.naturalWidth === 300 && img.naturalHeight === 171)) {
                           setFailedImages(prev => new Set(prev).add(model.image_filename));
                         }
                       }}

@@ -1,32 +1,127 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useCollectionStore } from "@/store/useCollectionStore";
 import ModelCard from "@/components/ModelCard";
 import AddModal from "@/components/AddModal";
 import AuthGuard from "@/components/AuthGuard";
 import { Plus, ChevronDown } from "lucide-react";
 
+/** Extract image filename from a Fandom CDN URL */
+function extractFandomFilename(url: string): string | null {
+  if (!url) return null;
+  // Match: /images/{hash1}/{hash2}/{filename}/revision/ or just /{filename}.ext
+  const match = url.match(/\/([^/]+\.(?:jpg|jpeg|png|gif|webp))(?:\/|$)/i);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+/** Check if a URL is a Fandom CDN image URL */
+function isFandomUrl(url: string): boolean {
+  if (!url) return false;
+  return url.includes("static.wikia.nocookie.net") || url.includes("fandom.com");
+}
+
 /** Strip wiki markup artifacts from series names stored in user collections */
 function cleanSeries(raw: string): string {
   if (!raw) return "";
   return raw
-    .replace(/\{\{[^}]*\}\}/g, "")
-    .replace(/bgcolor="[^"]*"\s*\|?\s*/gi, "")
-    .replace(/\[\[[^\]]*\|([^\]]*)\]\]/g, "$1")
-    .replace(/\[\[([^\]]*)\]\]/g, "$1")
-    .replace(/'''?/g, "")
+    .replace(/\{\{[^}]*\}\}/g, "")              // {{NM|2025}}, {{KR}}, etc.
+    .replace(/bgcolor="[^"]*"\s*\|?\s*/gi, "")   // bgcolor="#32CD32" |
+    .replace(/\[\[[^\]]*\|([^\]]*)\]\]/g, "$1")  // [[Link|Text]] → Text
+    .replace(/\[\[([^\]]*)\]\]/g, "$1")           // [[Text]] → Text
+    .replace(/'''?/g, "")                          // bold/italic wiki markup
+    .replace(/\}\}+/g, "")                        // orphaned closing braces
+    .replace(/\{\{+/g, "")                        // orphaned opening braces
     .replace(/\s{2,}/g, " ")
-    .trim();
+    .trim()
+    .replace(/^\d+$/, "");                         // pure numbers are artifacts, not series names
 }
 
 export default function CollectionPage() {
   const models = useCollectionStore(state => state.models);
   const [isAddModalOpen, setAddModalOpen] = useState(false);
-  
+
   const [sortParam, setSortParam] = useState("Name: A-Z");
   const [seriesFilter, setSeriesFilter] = useState<string[]>([]);
   const [manFilter, setManFilter] = useState<string[]>([]);
+
+  /** Map of model.id → freshly resolved Fandom image URLs (full + thumb) */
+  const [resolvedImages, setResolvedImages] = useState<Record<string, { url: string; thumburl: string }>>({});
+  const resolvedRef = useRef<Set<string>>(new Set());
+
+  /* ── Re-resolve stale Fandom CDN URLs via Wiki API ─────── */
+  useEffect(() => {
+    let cancelled = false;
+
+    async function resolveImages() {
+      // Collect models whose stored image is a Fandom URL and hasn't been resolved yet
+      const toResolve: { id: string; filename: string }[] = [];
+      for (const m of models) {
+        if (resolvedRef.current.has(m.id)) continue;   // already resolved
+        if (!isFandomUrl(m.image)) continue;            // not a Fandom URL
+        const fname = extractFandomFilename(m.image);
+        if (!fname) continue;
+        toResolve.push({ id: m.id, filename: fname });
+      }
+
+      if (toResolve.length === 0) return;
+
+      // Deduplicate filenames (multiple models may share the same image)
+      const filenameToIds = new Map<string, string[]>();
+      for (const { id, filename } of toResolve) {
+        const ids = filenameToIds.get(filename) || [];
+        ids.push(id);
+        filenameToIds.set(filename, ids);
+      }
+
+      const uniqueFilenames = Array.from(filenameToIds.keys());
+      const newUrls: Record<string, { url: string; thumburl: string }> = {};
+      const BATCH = 45;
+
+      for (let i = 0; i < uniqueFilenames.length; i += BATCH) {
+        if (cancelled) break;
+        const batch = uniqueFilenames.slice(i, i + BATCH);
+        const titles = batch.map(f => `File:${f}`).join("|");
+
+        try {
+          const res = await fetch(
+            `https://hotwheels.fandom.com/api.php?action=query&format=json&origin=*&prop=imageinfo&iiprop=url|thumburl&iiurlwidth=400&titles=${encodeURIComponent(titles)}`
+          );
+          const data = await res.json();
+          const pages = data.query?.pages || {};
+
+          for (const pg of Object.values(pages) as any[]) {
+            const info = pg.imageinfo?.[0];
+            if (info) {
+              const fname = pg.title.replace(/^File:/, "");
+              const pair = {
+                url: info.url || "",
+                thumburl: info.thumburl || "",
+              };
+              // Map back to all model IDs that use this filename
+              const ids = filenameToIds.get(fname) || [];
+              for (const id of ids) {
+                newUrls[id] = pair;
+              }
+            }
+          }
+        } catch (err) {
+          console.warn("Fandom image batch resolve failed:", err);
+        }
+      }
+
+      if (!cancelled) {
+        // Mark all attempted models as resolved (even if no URL came back)
+        for (const { id } of toResolve) {
+          resolvedRef.current.add(id);
+        }
+        setResolvedImages(prev => ({ ...prev, ...newUrls }));
+      }
+    }
+
+    if (models.length > 0) resolveImages();
+    return () => { cancelled = true; };
+  }, [models]);
 
   // Sorting and Filtering logic
   let displayedModels = [...models];
@@ -129,7 +224,7 @@ export default function CollectionPage() {
         <section className="flex-1">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
             {displayedModels.map(model => (
-              <ModelCard key={model.id} model={model} />
+              <ModelCard key={model.id} model={model} resolvedImage={resolvedImages[model.id]} />
             ))}
             {displayedModels.length === 0 && (
               <div className="col-span-full pt-10 text-on-surface/50 font-body text-center">No models found for these filters.</div>
