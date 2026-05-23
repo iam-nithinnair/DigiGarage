@@ -21,6 +21,22 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+/** Strip wiki table cell attributes: bgcolor="...", style="..." etc. before the pipe */
+function stripCellAttributes(cell) {
+  if (!cell) return '';
+  // Pattern: bgcolor="value" | content  (one or more attributes)
+  return cell.replace(
+    /^\s*(?:(?:bgcolor|style|align|valign|width|height|colspan|rowspan|class|id)\s*=\s*"[^"]*"\s*)+\|?\s*/gi,
+    ''
+  ).trim();
+}
+
+/** Remove wiki templates like {{NM|2025|white}}, {{KR}}, {{TH|2026}} */
+function stripWikiTemplates(text) {
+  if (!text) return '';
+  return text.replace(/\{\{[^}]*?\}\}/g, '').trim();
+}
+
 /** Strip wiki markup: [[Page|Display]] → Display, [[Page]] → Page */
 function cleanWikiLink(text) {
   if (!text) return '';
@@ -42,6 +58,14 @@ function cleanText(text) {
   text = text.replace(/&nbsp;/g, ' ');
   text = text.replace(/​/g, '');        // zero-width space
   return text.trim();
+}
+
+/** Full clean pipeline: attributes → templates → wiki links → HTML/text → normalize spaces */
+function cleanCell(raw) {
+  let result = cleanText(cleanWikiLink(stripWikiTemplates(stripCellAttributes(raw))));
+  // Collapse multiple spaces left by template removal
+  result = result.replace(/\s{2,}/g, ' ').trim();
+  return result;
 }
 
 /** Extract image filename from [[File:name.jpg|...]] or [[Image:name.jpg|...]] */
@@ -88,8 +112,22 @@ function parseWikiTables(wikitext) {
           .filter(l => l.trim().startsWith('!'))
           .map(l => l.replace(/^\s*!\s*/, ''))
           .join('!!');
-        headers = fullHeader.split(/!!/).map(h => cleanText(cleanWikiLink(h)).trim());
+        headers = fullHeader.split(/!!/).map(h => cleanCell(h));
         continue;
+      }
+
+      // Fallback: detect "bold header" rows used in 1997-era pages
+      // e.g.  | bgcolor="#C0C0C0"| '''Toy #'''  (pipe-separated cells with bold text)
+      if (headers.length === 0) {
+        const cellLines = lines.filter(l => l.trim().startsWith('|'));
+        const boldCells = cellLines.filter(l => /'''.+'''/.test(l));
+        if (boldCells.length >= 3 && boldCells.length === cellLines.length) {
+          // All cells are bold — treat as header row
+          const fullRow = cellLines.map(l => l.replace(/^\s*\|\s*/, '')).join('||');
+          const cells = fullRow.split(/\|\|/).map(c => c.trim());
+          headers = cells.map(h => cleanCell(h));
+          continue;
+        }
       }
 
       // Parse data cells
@@ -111,6 +149,73 @@ function parseWikiTables(wikitext) {
   }
 
   return tables;
+}
+
+// ── Template Row Parser (1997-era pages) ─────────────────────
+
+/**
+ * Split template parameters by | but respect [[...]] wiki links
+ * which may contain their own | characters.
+ */
+function splitTemplateParams(text) {
+  const params = [];
+  let current = '';
+  let depth = 0;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '[' && text[i + 1] === '[') { depth++; current += '[['; i++; continue; }
+    if (text[i] === ']' && text[i + 1] === ']') { depth = Math.max(0, depth - 1); current += ']]'; i++; continue; }
+    if (text[i] === '|' && depth === 0) { params.push(current); current = ''; continue; }
+    current += text[i];
+  }
+  if (current) params.push(current);
+  return params;
+}
+
+/**
+ * Parse {{List0000White|...}} and similar template-based row formats
+ * used on some late-1990s / early-2000s wiki pages.
+ * Returns models extracted from template rows in the wikitext.
+ */
+function parseTemplateRows(wikitext, year) {
+  const models = [];
+  // Match templates like {{List0000White|toy|col|name|series|series#|}}
+  // Template names vary: List0000White, Listblack, ListC0C0C0, etc.
+  const templateRegex = /\{\{List[A-Fa-f0-9]*(?:White|Black|Red|Blue|Green|Yellow|Gray|Grey|C0C0C0)?[^|]*\|([\s\S]*?)\}\}/gi;
+  let match;
+
+  while ((match = templateRegex.exec(wikitext)) !== null) {
+    const params = splitTemplateParams(match[1]);
+    if (params.length < 3) continue;
+
+    const toyNum = cleanCell(params[0] || '');
+    const colNum = cleanCell(params[1] || '');
+    const name = cleanCell(params[2] || '');
+    const series = cleanCell(params[3] || '');
+    const seriesNum = cleanCell(params[4] || '');
+
+    if (!name || name.length < 2) continue;
+    if (name.startsWith('=') || name.startsWith('{')) continue;
+
+    // Try to find the image that follows this template in the text
+    const matchEnd = match.index + match[0].length;
+    const afterMatch = wikitext.substring(matchEnd, matchEnd + 200);
+    const imageFile = extractImageName(afterMatch);
+
+    models.push({
+      toy_number: toyNum,
+      collector_number: colNum,
+      model_name: name,
+      series: series,
+      series_number: seriesNum,
+      year: year,
+      image_filename: imageFile,
+      color: '',
+      manufacturer: 'Hot Wheels',
+      scale: '1:64',
+    });
+  }
+
+  return models;
 }
 
 /** Map table rows to model objects based on detected headers */
@@ -138,19 +243,19 @@ function mapTableToModels(table, year) {
   }
 
   for (const cells of rows) {
-    const name = colMap.name !== undefined ? cleanText(cleanWikiLink(cells[colMap.name] || '')) : '';
+    const name = colMap.name !== undefined ? cleanCell(cells[colMap.name] || '') : '';
     if (!name || name.length < 2) continue;
 
     // Skip section header rows (e.g., "=== Series Name ===")
     if (name.startsWith('=') || name.startsWith('{')) continue;
 
-    const toyNum = colMap.toyNum !== undefined ? cleanText(cleanWikiLink(cells[colMap.toyNum] || '')) : '';
-    const colNum = colMap.colNum !== undefined ? cleanText(cleanWikiLink(cells[colMap.colNum] || '')) : '';
-    const series = colMap.series !== undefined ? cleanText(cleanWikiLink(cells[colMap.series] || '')) : '';
-    const seriesNum = colMap.seriesNum !== undefined ? cleanText(cleanWikiLink(cells[colMap.seriesNum] || '')) : '';
+    const toyNum = colMap.toyNum !== undefined ? cleanCell(cells[colMap.toyNum] || '') : '';
+    const colNum = colMap.colNum !== undefined ? cleanCell(cells[colMap.colNum] || '') : '';
+    const series = colMap.series !== undefined ? cleanCell(cells[colMap.series] || '') : '';
+    const seriesNum = colMap.seriesNum !== undefined ? cleanCell(cells[colMap.seriesNum] || '') : '';
     const photoRaw = colMap.photo !== undefined ? cells[colMap.photo] || '' : '';
     const imageFile = extractImageName(photoRaw);
-    const color = colMap.color !== undefined ? cleanText(cleanWikiLink(cells[colMap.color] || '')) : '';
+    const color = colMap.color !== undefined ? cleanCell(cells[colMap.color] || '') : '';
 
     models.push({
       toy_number: toyNum,
@@ -201,6 +306,15 @@ async function fetchYearData(year) {
     for (const table of tables) {
       const models = mapTableToModels(table, year);
       allModels = allModels.concat(models);
+    }
+
+    // Fallback: parse template-based rows (used in late 1990s / early 2000s pages)
+    if (allModels.length === 0) {
+      const templateModels = parseTemplateRows(wikitext, year);
+      if (templateModels.length > 0) {
+        console.log(`(template parser: ${templateModels.length}) `);
+        allModels = templateModels;
+      }
     }
 
     return allModels;

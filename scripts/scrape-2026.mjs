@@ -22,6 +22,21 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 // ── Helpers (same as main scraper) ──────────────────────────
 
+/** Strip wiki table cell attributes: bgcolor="...", style="..." etc. before the pipe */
+function stripCellAttributes(cell) {
+  if (!cell) return '';
+  return cell.replace(
+    /^\s*(?:(?:bgcolor|style|align|valign|width|height|colspan|rowspan|class|id)\s*=\s*"[^"]*"\s*)+\|?\s*/gi,
+    ''
+  ).trim();
+}
+
+/** Remove wiki templates like {{NM|2025|white}}, {{KR}}, {{TH|2026}} */
+function stripWikiTemplates(text) {
+  if (!text) return '';
+  return text.replace(/\{\{[^}]*?\}\}/g, '').trim();
+}
+
 function cleanWikiLink(text) {
   if (!text) return '';
   text = text.replace(/\[\[(File|Image):[^\]]*\]\]/gi, '');
@@ -38,6 +53,13 @@ function cleanText(text) {
   text = text.replace(/&nbsp;/g, ' ');
   text = text.replace(/​/g, '');
   return text.trim();
+}
+
+/** Full clean pipeline: attributes → templates → wiki links → HTML/text → normalize spaces */
+function cleanCell(raw) {
+  let result = cleanText(cleanWikiLink(stripWikiTemplates(stripCellAttributes(raw))));
+  result = result.replace(/\s{2,}/g, ' ').trim();
+  return result;
 }
 
 function extractImageName(text) {
@@ -67,7 +89,7 @@ function parseWikiTables(wikitext) {
           .filter(l => l.trim().startsWith('!'))
           .map(l => l.replace(/^\s*!\s*/, ''))
           .join('!!');
-        headers = fullHeader.split(/!!/).map(h => cleanText(cleanWikiLink(h)).trim());
+        headers = fullHeader.split(/!!/).map(h => cleanCell(h));
         continue;
       }
       const cellLines = lines.filter(l => l.trim().startsWith('|'));
@@ -97,7 +119,6 @@ function mapTableToModels(table, year) {
     else if (lower.includes('series') && !lower.includes('#')) colMap.series = i;
     else if (lower.includes('series#') || lower.includes('series #')) colMap.seriesNum = i;
     else if (lower.includes('photo') || lower.includes('image') || lower.includes('pic')) colMap.photo = i;
-    else if (lower.includes('color') || lower.includes('colour')) colMap.color = i;
   });
 
   if (colMap.name === undefined) {
@@ -106,19 +127,18 @@ function mapTableToModels(table, year) {
   }
 
   for (const cells of rows) {
-    const name = colMap.name !== undefined ? cleanText(cleanWikiLink(cells[colMap.name] || '')) : '';
+    const name = colMap.name !== undefined ? cleanCell(cells[colMap.name] || '') : '';
     if (!name || name.length < 2) continue;
     if (name.startsWith('=') || name.startsWith('{')) continue;
 
     models.push({
-      toy_number: colMap.toyNum !== undefined ? cleanText(cleanWikiLink(cells[colMap.toyNum] || '')) : '',
-      collector_number: colMap.colNum !== undefined ? cleanText(cleanWikiLink(cells[colMap.colNum] || '')) : '',
+      toy_number: colMap.toyNum !== undefined ? cleanCell(cells[colMap.toyNum] || '') : '',
+      collector_number: colMap.colNum !== undefined ? cleanCell(cells[colMap.colNum] || '') : '',
       model_name: name,
-      series: colMap.series !== undefined ? cleanText(cleanWikiLink(cells[colMap.series] || '')) : '',
-      series_number: colMap.seriesNum !== undefined ? cleanText(cleanWikiLink(cells[colMap.seriesNum] || '')) : '',
+      series: colMap.series !== undefined ? cleanCell(cells[colMap.series] || '') : '',
+      series_number: colMap.seriesNum !== undefined ? cleanCell(cells[colMap.seriesNum] || '') : '',
       year: year,
       image_filename: colMap.photo !== undefined ? extractImageName(cells[colMap.photo] || '') : '',
-      color: colMap.color !== undefined ? cleanText(cleanWikiLink(cells[colMap.color] || '')) : '',
       manufacturer: 'Hot Wheels',
       scale: '1:64',
     });

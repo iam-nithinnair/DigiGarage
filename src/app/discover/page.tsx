@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   Search, Plus, Loader2, ChevronLeft, ChevronRight,
   Bookmark, CheckCircle2, X, Calendar, Layers,
-  RotateCcw, Palette, Database, Tag, Hash, Car
+  RotateCcw, Database, Tag, Hash, Car
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -23,26 +23,22 @@ interface CatalogModel {
   series_number: string;
   year: number;
   image_filename: string;
-  color: string;
   manufacturer: string;
   scale: string;
-  case_code: string | null;
 }
 
 /* ── Constants ─────────────────────────────────────────────── */
 
 const PAGE_SIZE = 40;
 
-/** Hot Wheels mainline case letters — I and O are skipped (look like 1 and 0) */
-const CASE_CODES = ["A", "B", "C", "D", "E", "F", "G", "H", "J", "K", "L", "M", "N", "P", "Q"] as const;
-
 /** All years present in the catalog (newest first) */
 const CATALOG_YEARS = [
   2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016,
   2015, 2014, 2013, 2012, 2011, 2010, 2009, 2008, 2007, 2006,
-  2005, 2004, 2003, 2002, 2000, 1996, 1995, 1994, 1993, 1992,
-  1991, 1990, 1989, 1988, 1987, 1986, 1985, 1984, 1983, 1982,
-  1981, 1980, 1979, 1978, 1977, 1976, 1975, 1974, 1969, 1968,
+  2005, 2004, 2003, 2002, 2001, 2000, 1999, 1998, 1997, 1996,
+  1995, 1994, 1993, 1992, 1991, 1990, 1989, 1988, 1987, 1986,
+  1985, 1984, 1983, 1982, 1981, 1980, 1979, 1978, 1977, 1976,
+  1975, 1974, 1969, 1968,
 ];
 
 /* ── Helpers ───────────────────────────────────────────────── */
@@ -57,23 +53,6 @@ function getPageNumbers(current: number, total: number): (number | "dots")[] {
   return pages;
 }
 
-function getColorHex(colorName: string): string | null {
-  if (!colorName) return null;
-  const lower = colorName.toLowerCase();
-  const map: Record<string, string> = {
-    red: "#ef4444", blue: "#3b82f6", green: "#22c55e", yellow: "#eab308",
-    black: "#374151", white: "#e5e7eb", silver: "#94a3b8", gold: "#d97706",
-    orange: "#f97316", purple: "#a855f7", pink: "#ec4899", brown: "#92400e",
-    chrome: "#cbd5e1", gray: "#6b7280", grey: "#6b7280", teal: "#14b8a6",
-    navy: "#1e3a5f", maroon: "#7f1d1d", copper: "#b87333", lime: "#84cc16",
-    aqua: "#06b6d4", tan: "#d2b48c", cream: "#fef3c7", olive: "#65a30d",
-    magenta: "#d946ef", turquoise: "#2dd4bf", burgundy: "#881337",
-  };
-  for (const [key, val] of Object.entries(map)) {
-    if (lower.includes(key)) return val;
-  }
-  return null;
-}
 
 /** Clean wiki template markup from series names
  *  e.g. "Muscle Mania {{NM|2025}} {{DG}}" → "Muscle Mania"
@@ -116,6 +95,7 @@ export default function DiscoverPage() {
   /* Image state */
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
   const [imagesLoading, setImagesLoading] = useState(false);
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
   /* Filter state */
   const [searchQuery, setSearchQuery] = useState("");
@@ -123,7 +103,6 @@ export default function DiscoverPage() {
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [seriesFilter, setSeriesFilter] = useState("");
   const [debouncedSeries, setDebouncedSeries] = useState("");
-  const [selectedCase, setSelectedCase] = useState<string>("");
   const [sortBy, setSortBy] = useState("year_desc");
 
   /* UI state */
@@ -158,11 +137,19 @@ export default function DiscoverPage() {
 
       if (debouncedSeries.length >= 2) query = query.ilike("series", `%${debouncedSeries}%`);
 
-      if (selectedCase) query = query.eq("case_code", selectedCase);
-
       switch (sortBy) {
-        case "year_desc": query = query.order("year", { ascending: false }).order("model_name", { ascending: true }); break;
-        case "year_asc": query = query.order("year", { ascending: true }).order("model_name", { ascending: true }); break;
+        case "year_desc":
+          query = query
+            .order("year", { ascending: false })
+            .order("collector_number", { ascending: false, nullsFirst: false })
+            .order("model_name", { ascending: true });
+          break;
+        case "year_asc":
+          query = query
+            .order("year", { ascending: true })
+            .order("collector_number", { ascending: true, nullsFirst: false })
+            .order("model_name", { ascending: true });
+          break;
         case "name_asc": query = query.order("model_name", { ascending: true }); break;
         case "name_desc": query = query.order("model_name", { ascending: false }); break;
       }
@@ -183,7 +170,7 @@ export default function DiscoverPage() {
       setIsLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch, selectedYear, debouncedSeries, selectedCase, sortBy, page]);
+  }, [debouncedSearch, selectedYear, debouncedSeries, sortBy, page]);
 
   useEffect(() => { fetchCatalog(); }, [fetchCatalog]);
 
@@ -291,10 +278,10 @@ export default function DiscoverPage() {
   };
 
   /* ── Filter helpers ────────────────────────────────────── */
-  const hasFilters = !!searchQuery || !!selectedYear || !!seriesFilter || !!selectedCase || sortBy !== "year_desc";
+  const hasFilters = !!searchQuery || !!selectedYear || !!seriesFilter || sortBy !== "year_desc";
   const clearFilters = () => {
     setSearchQuery(""); setSelectedYear(null);
-    setSeriesFilter(""); setSelectedCase(""); setSortBy("year_desc"); setPage(0);
+    setSeriesFilter(""); setSortBy("year_desc"); setPage(0);
   };
 
   /* ── Render ────────────────────────────────────────────── */
@@ -311,7 +298,7 @@ export default function DiscoverPage() {
           Discover <span className="text-primary-container">Catalog</span>
         </h1>
         <p className="text-on-surface-variant/70 leading-relaxed max-w-xl text-lg">
-          Browse {totalCount > 0 ? totalCount.toLocaleString() : "10,000+"} Hot Wheels models spanning 1968–2025. Search, filter, and add to your collection or wishlist.
+          Browse {totalCount > 0 ? totalCount.toLocaleString() : "10,000+"} Hot Wheels models spanning 1968–2026. Search, filter, and add to your collection or wishlist.
         </p>
       </header>
 
@@ -339,7 +326,7 @@ export default function DiscoverPage() {
           </div>
         </div>
 
-        {/* Year + Case Dropdowns */}
+        {/* Year Dropdown */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="sm:w-56">
             <label className="font-label text-[10px] uppercase tracking-[0.15em] text-on-surface/40 mb-2 block">Year</label>
@@ -351,19 +338,6 @@ export default function DiscoverPage() {
               <option value="">All Years</option>
               {CATALOG_YEARS.map(y => (
                 <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
-          </div>
-          <div className="sm:w-56">
-            <label className="font-label text-[10px] uppercase tracking-[0.15em] text-on-surface/40 mb-2 block">Case</label>
-            <select
-              value={selectedCase}
-              onChange={e => { setSelectedCase(e.target.value); setPage(0); }}
-              className="w-full bg-surface-container-high border border-white/5 py-3 px-4 font-body text-sm text-on-surface outline-none focus:border-primary-container/50 cursor-pointer"
-            >
-              <option value="">All Cases</option>
-              {CASE_CODES.map(code => (
-                <option key={code} value={code}>Case {code}</option>
               ))}
             </select>
           </div>
@@ -414,7 +388,7 @@ export default function DiscoverPage() {
             <>
               Showing <span className="text-on-surface font-bold">{(page * PAGE_SIZE + 1).toLocaleString()}–{Math.min((page + 1) * PAGE_SIZE, totalCount).toLocaleString()}</span>{" "}
               of <span className="text-on-surface font-bold">{totalCount.toLocaleString()}</span> models
-              {(debouncedSearch || selectedYear || debouncedSeries || selectedCase) && <span className="text-primary ml-2">(filtered)</span>}
+              {(debouncedSearch || selectedYear || debouncedSeries) && <span className="text-primary ml-2">(filtered)</span>}
             </>
           )}
         </p>
@@ -449,8 +423,7 @@ export default function DiscoverPage() {
             const inISO = isInISO(model.model_name);
             const isAdding = addingId === model.catalog_id;
             const imgUrl = imageUrls[model.image_filename] || "";
-            const colorHex = getColorHex(model.color);
-
+            const imgFailed = failedImages.has(model.image_filename);
             return (
               <article
                 key={model.catalog_id}
@@ -459,18 +432,19 @@ export default function DiscoverPage() {
               >
                 {/* ── Image ── */}
                 <div className="aspect-[4/3] relative overflow-hidden bg-[#080808] flex items-center justify-center">
-                  {imgUrl ? (
+                  {imgUrl && !imgFailed ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={imgUrl}
                       alt={model.model_name}
                       referrerPolicy="no-referrer"
                       loading="lazy"
+                      onError={() => setFailedImages(prev => new Set(prev).add(model.image_filename))}
                       className="absolute inset-0 w-full h-full object-contain p-4 transition-transform duration-500 group-hover:scale-110"
                     />
                   ) : (
                     <div className="flex items-center justify-center h-full w-full">
-                      {imagesLoading ? (
+                      {imagesLoading && !imgFailed ? (
                         <div className="w-8 h-8 border-2 border-on-surface/10 border-t-primary/30 rounded-full animate-spin" />
                       ) : (
                         <Car size={36} className="text-on-surface/10" />
@@ -481,16 +455,11 @@ export default function DiscoverPage() {
                   {/* Gradient overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent opacity-60 pointer-events-none" />
 
-                  {/* Year + Case badges */}
+                  {/* Year badge */}
                   <div className="absolute bottom-3 left-3 flex items-center gap-1.5 z-10">
                     <div className="bg-black/70 backdrop-blur-sm text-on-surface font-headline text-[11px] font-bold px-2.5 py-1 tracking-wider">
                       {model.year}
                     </div>
-                    {model.case_code && (
-                      <div className="bg-primary-container/80 backdrop-blur-sm text-on-primary-container font-headline text-[10px] font-bold px-2 py-1 tracking-widest">
-                        Case {model.case_code}
-                      </div>
-                    )}
                   </div>
 
                   {/* Status badges */}
@@ -526,13 +495,6 @@ export default function DiscoverPage() {
                       <Layers size={11} className="shrink-0" />
                       <span className="font-label text-[10px] tracking-wider uppercase truncate font-bold">{cleanSeries(model.series)}</span>
                       {model.series_number && <span className="font-label text-[9px] text-on-surface/25 shrink-0">({model.series_number})</span>}
-                    </div>
-                  )}
-
-                  {model.color && colorHex && (
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <span className="w-2.5 h-2.5 rounded-full border border-white/10 shrink-0" style={{ background: colorHex }} />
-                      <span className="font-body text-[10px] text-on-surface/30 truncate">{model.color}</span>
                     </div>
                   )}
 
@@ -628,9 +590,9 @@ export default function DiscoverPage() {
       {selectedModel && (() => {
         const inCollection = isInCollection(selectedModel.model_name);
         const inISO = isInISO(selectedModel.model_name);
-        const colorHex = getColorHex(selectedModel.color);
         const isAdding = addingId === selectedModel.catalog_id;
         const modalImg = imageUrls[selectedModel.image_filename] || "";
+        const modalImgFailed = failedImages.has(selectedModel.image_filename);
 
         return (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
@@ -644,12 +606,13 @@ export default function DiscoverPage() {
             >
               {/* Left — Image */}
               <div className="w-full md:w-[55%] aspect-square md:aspect-auto relative bg-[#030303] flex items-center justify-center p-8 group/img shrink-0">
-                {modalImg ? (
+                {modalImg && !modalImgFailed ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={modalImg}
                     alt={selectedModel.model_name}
                     referrerPolicy="no-referrer"
+                    onError={() => setFailedImages(prev => new Set(prev).add(selectedModel.image_filename))}
                     className="w-full h-full object-contain transition-transform duration-700 group-hover/img:scale-105"
                   />
                 ) : (
@@ -686,19 +649,7 @@ export default function DiscoverPage() {
                   {selectedModel.toy_number && <InfoCell label="Toy Number" value={selectedModel.toy_number} icon={<Hash size={13} />} />}
                   {selectedModel.collector_number && <InfoCell label="Collector #" value={selectedModel.collector_number} icon={<Tag size={13} />} />}
                   {selectedModel.series_number && <InfoCell label="Series #" value={selectedModel.series_number} icon={<Layers size={13} />} />}
-                  {selectedModel.case_code && <InfoCell label="Case" value={`Case ${selectedModel.case_code}`} icon={<Database size={13} />} />}
-                  {selectedModel.color && (
-                    <div className="bg-surface-container p-3 border border-white/5">
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <Palette size={13} className="text-on-surface/30" />
-                        <span className="font-label text-[9px] uppercase tracking-[0.15em] text-on-surface/30">Color</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {colorHex && <span className="w-3.5 h-3.5 rounded-full border border-white/20" style={{ background: colorHex }} />}
-                        <span className="font-headline text-base font-bold text-on-surface">{selectedModel.color}</span>
-                      </div>
-                    </div>
-                  )}
+
                   <InfoCell label="Scale" value={selectedModel.scale || "1:64"} icon={<Car size={13} />} />
                 </div>
 

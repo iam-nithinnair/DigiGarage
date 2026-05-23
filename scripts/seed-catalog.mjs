@@ -62,10 +62,13 @@ async function seed() {
     console.log('  ✓ Cleared.\n');
   }
 
+  // Strip fields that may no longer exist as columns (color, case_code)
+  const cleaned = catalog.map(({ color, case_code, ...rest }) => rest);
+
   // Insert in batches
   let inserted = 0;
-  for (let i = 0; i < catalog.length; i += BATCH_SIZE) {
-    const batch = catalog.slice(i, i + BATCH_SIZE);
+  for (let i = 0; i < cleaned.length; i += BATCH_SIZE) {
+    const batch = cleaned.slice(i, i + BATCH_SIZE);
     const { error } = await supabase
       .from('hotwheels_catalog')
       .insert(batch);
@@ -83,7 +86,7 @@ async function seed() {
       inserted += batch.length;
     }
 
-    process.stdout.write(`  Inserted: ${inserted}/${catalog.length}\r`);
+    process.stdout.write(`  Inserted: ${inserted}/${cleaned.length}\r`);
   }
 
   console.log(`\n\n═══════════════════════════════════════════════`);
