@@ -3,30 +3,41 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useCollectionStore, Model } from "@/store/useCollectionStore";
-import { Heart, Trash2, BadgeCheck, MapPin, Tag } from "lucide-react";
+import { Heart, Trash2, BadgeCheck, MapPin, Tag, ImageOff } from "lucide-react";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
 interface ModelCardProps {
   model: Model;
 }
 
+function ImagePlaceholder() {
+  return (
+    <div className="w-full h-full bg-surface-container-highest flex flex-col items-center justify-center gap-2">
+      <ImageOff size={32} className="text-on-surface/15" />
+      <span className="font-label text-[10px] uppercase tracking-[0.15em] text-on-surface/25">Image not Available</span>
+    </div>
+  );
+}
+
 export default function ModelCard({ model }: ModelCardProps) {
   const { toggleFavorite, removeModel } = useCollectionStore();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [imgFailed, setImgFailed] = useState(false);
 
   return (
     <>
       <article className="group bg-surface-container-low rounded-xl overflow-hidden transition-all duration-300 hover:translate-y-[-4px] flex flex-col h-full border border-white/5">
         <div className="relative aspect-[4/3] overflow-hidden bg-surface-container-lowest shrink-0">
-          {model.image ? (
+          {model.image && !imgFailed ? (
             <Image
               fill
               alt={model.name}
               className="object-cover transition-transform duration-500 group-hover:scale-110"
               src={model.image}
+              onError={() => setImgFailed(true)}
             />
           ) : (
-            <div className="w-full h-full bg-surface-variant flex items-center justify-center font-headline text-on-surface/50">No Image</div>
+            <ImagePlaceholder />
           )}
           <div className="absolute top-4 right-4 flex gap-2 z-10">
             <button
