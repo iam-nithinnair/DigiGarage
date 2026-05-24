@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useStore } from "@/store/useStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import { useAdminStore, UserRole } from "@/store/useAdminStore";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -27,9 +27,10 @@ import { toast } from "sonner";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function AdminPage() {
-  const { user, isLoaded } = useStore();
+  const { user, isLoaded } = useAuthStore();
   const {
     isAdmin,
+    isRoleLoading,
     users,
     selectedUserModels,
     selectedUserId,
@@ -64,7 +65,7 @@ export default function AdminPage() {
     }
   }, [isAdmin, fetchAllUsers, fetchPlatformStats]);
 
-  if (!isLoaded || !user) {
+  if (!isLoaded || !user || isRoleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="animate-spin text-primary" size={48} />
@@ -368,14 +369,9 @@ export default function AdminPage() {
               <h3 className="font-headline text-xs font-bold tracking-wider text-on-surface uppercase">Security Terminal</h3>
               <Lock className="text-on-surface/20" size={16} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <button className="bg-surface-container-high py-3 px-4 rounded font-label text-[10px] uppercase tracking-widest text-on-surface/60 hover:text-on-surface hover:bg-surface-container-highest transition-colors text-center">
-                Reset Pass
-              </button>
-              <button className="bg-surface-container-high py-3 px-4 rounded font-label text-[10px] uppercase tracking-widest text-on-surface/60 hover:text-on-surface hover:bg-surface-container-highest transition-colors text-center">
-                Link Email
-              </button>
-            </div>
+            <p className="font-label text-[10px] text-on-surface/30 uppercase tracking-wider">
+              Security controls managed via Supabase dashboard.
+            </p>
           </section>
 
           {/* Asset Oversight */}
@@ -398,9 +394,9 @@ export default function AdminPage() {
           &copy; {new Date().getFullYear()} The Digital Curator. Precision Engineered.
         </p>
         <div className="flex items-center gap-6">
-          <span className="font-label text-[10px] text-on-surface/20 uppercase tracking-widest hover:text-on-surface/40 cursor-pointer transition-colors">Privacy</span>
-          <span className="font-label text-[10px] text-on-surface/20 uppercase tracking-widest hover:text-on-surface/40 cursor-pointer transition-colors">Terms</span>
-          <span className="font-label text-[10px] text-on-surface/20 uppercase tracking-widest hover:text-on-surface/40 cursor-pointer transition-colors">Archive</span>
+          <span className="font-label text-[10px] text-on-surface/20 uppercase tracking-widest">Privacy</span>
+          <span className="font-label text-[10px] text-on-surface/20 uppercase tracking-widest">Terms</span>
+          <span className="font-label text-[10px] text-on-surface/20 uppercase tracking-widest">Archive</span>
         </div>
         <p className="font-label text-[10px] text-on-surface/15 uppercase tracking-widest">System v1.2.84</p>
       </footer>

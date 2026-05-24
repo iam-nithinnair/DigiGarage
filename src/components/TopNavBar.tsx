@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useStore } from "@/store/useStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import { useAdminStore } from "@/store/useAdminStore";
 import { Home, LayoutGrid, List, Heart, Search, User, Terminal, LogOut, Menu, X, Shield } from "lucide-react";
 import { toast } from "sonner";
@@ -19,7 +19,7 @@ const navLinks = [
 
 export default function TopNavBar() {
   const pathname = usePathname();
-  const { isLoaded, fetchData, user, signOut, initializeAuth } = useStore();
+  const { isLoaded, user, signOut, initializeAuth } = useAuthStore();
   const { isAdmin, fetchCurrentUserRole } = useAdminStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -103,8 +103,8 @@ export default function TopNavBar() {
                   <User size={20} />
                 </Link>
                 <button
-                  onClick={() => {
-                    signOut();
+                  onClick={async () => {
+                    await signOut();
                     toast.success("Session ended. Securely logged out.");
                   }}
                   className="hidden md:block p-2 hover:bg-error/10 rounded-full transition-all text-on-surface/60 hover:text-error"
@@ -153,8 +153,8 @@ export default function TopNavBar() {
             )}
             {user && (
               <button
-                onClick={() => {
-                  signOut();
+                onClick={async () => {
+                  await signOut();
                   toast.success("Session ended. Securely logged out.");
                   setMobileMenuOpen(false);
                 }}

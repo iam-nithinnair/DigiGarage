@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useStore } from "@/store/useStore";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useIsoStore } from "@/store/useIsoStore";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -11,19 +11,58 @@ interface AddISOModalProps {
 }
 
 export default function AddISOModal({ isOpen, onClose }: AddISOModalProps) {
-  const { addISOModel } = useStore();
+  const { addIsoModel } = useIsoStore();
   const [name, setName] = useState("");
   const [targetPrice, setTargetPrice] = useState("");
   const [rarity, setRarity] = useState("Common");
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  // Reset form when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setName("");
+      setTargetPrice("");
+      setRarity("Common");
+    }
+  }, [isOpen]);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen]);
+
+  // Focus trap + Escape
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === "Escape") { onClose(); return; }
+    if (e.key !== "Tab" || !dialogRef.current) return;
+
+    const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusable.length === 0) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (e.shiftKey) {
+      if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+    } else {
+      if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  }, [onClose]);
 
   useEffect(() => {
     if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
     document.addEventListener("keydown", handleKeyDown);
+    setTimeout(() => {
+      const first = dialogRef.current?.querySelector<HTMLElement>('input, button, select');
+      first?.focus();
+    }, 50);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, handleKeyDown]);
 
   if (!isOpen) return null;
 
@@ -32,7 +71,7 @@ export default function AddISOModal({ isOpen, onClose }: AddISOModalProps) {
     if (!name || !targetPrice) return;
 
     try {
-      await addISOModel({
+      await addIsoModel({
         name,
         targetprice: targetPrice,
         rarity,
@@ -50,7 +89,7 @@ export default function AddISOModal({ isOpen, onClose }: AddISOModalProps) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
       <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={onClose}></div>
-      <div role="dialog" aria-modal="true" aria-labelledby="add-iso-title" className="relative w-full max-w-xl bg-surface-container-high p-8 md:p-12 shadow-2xl">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="add-iso-title" className="relative w-full max-w-xl bg-surface-container-high p-5 sm:p-8 md:p-12 shadow-2xl">
         <div className="flex justify-between items-start mb-10">
           <div>
             <h2 id="add-iso-title" className="text-3xl font-headline font-bold tracking-tight text-on-surface">New ISO</h2>

@@ -34,6 +34,7 @@ export interface AdminModel {
 interface AdminState {
   currentUserRole: UserRole | null;
   isAdmin: boolean;
+  isRoleLoading: boolean;
   users: UserProfile[];
   selectedUserModels: AdminModel[];
   selectedUserId: string | null;
@@ -57,6 +58,7 @@ interface AdminState {
 export const useAdminStore = create<AdminState>((set, get) => ({
   currentUserRole: null,
   isAdmin: false,
+  isRoleLoading: true,
   users: [],
   selectedUserModels: [],
   selectedUserId: null,
@@ -70,6 +72,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
 
   fetchCurrentUserRole: async (userId: string) => {
     const supabase = createClient();
+    set({ isRoleLoading: true });
     try {
       // Use maybeSingle to avoid PGRST116 error when no row exists
       const { data, error } = await supabase
@@ -81,36 +84,36 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       if (error) {
         console.error('[Admin] Failed to fetch role:', error.code, error.message);
         // Profile might not exist yet — create one
-        if (error.code === 'PGRST116' || !data) {
-          const { error: insertError } = await supabase
-            .from('profiles')
-            .insert({ id: userId, role: 'user' });
-          if (insertError) {
-            console.error('[Admin] Failed to create profile:', insertError.message);
-          } else {
-            set({ currentUserRole: 'user', isAdmin: false });
-          }
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({ id: userId, role: 'user' });
+        if (!insertError) {
+          set({ currentUserRole: 'user', isAdmin: false, isRoleLoading: false });
+        } else {
+          console.error('[Admin] Failed to create profile:', insertError.message);
+          set({ isRoleLoading: false });
         }
         return;
       }
 
       if (!data) {
         // No profile exists — create one
-        console.log('[Admin] No profile found, creating one for:', userId);
         const { error: insertError } = await supabase
           .from('profiles')
           .insert({ id: userId, role: 'user' });
         if (!insertError) {
-          set({ currentUserRole: 'user', isAdmin: false });
+          set({ currentUserRole: 'user', isAdmin: false, isRoleLoading: false });
+        } else {
+          set({ isRoleLoading: false });
         }
         return;
       }
 
       const role = (data.role as UserRole) || 'user';
-      console.log('[Admin] User role:', role);
-      set({ currentUserRole: role, isAdmin: role === 'admin' });
+      set({ currentUserRole: role, isAdmin: role === 'admin', isRoleLoading: false });
     } catch (e) {
       console.error('[Admin] Exception fetching role:', e);
+      set({ isRoleLoading: false });
     }
   },
 

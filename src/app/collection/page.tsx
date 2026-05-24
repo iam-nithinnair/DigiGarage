@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useStore } from "@/store/useStore";
+import { useCollectionStore } from "@/store/useCollectionStore";
 import ModelCard from "@/components/ModelCard";
 import AddModal from "@/components/AddModal";
 import AuthGuard from "@/components/AuthGuard";
 import { Plus, ChevronDown } from "lucide-react";
 
 export default function CollectionPage() {
-  const models = useStore(state => state.models);
+  const models = useCollectionStore(state => state.models);
   const [isAddModalOpen, setAddModalOpen] = useState(false);
   
   const [sortParam, setSortParam] = useState("Name: A-Z");
@@ -29,9 +29,9 @@ export default function CollectionPage() {
   displayedModels.sort((a, b) => {
     switch(sortParam) {
       case "Year: Newest First":
-        return Number(b.year) - Number(a.year);
+        return (Number(b.year) || 0) - (Number(a.year) || 0);
       case "Year: Oldest First":
-        return Number(a.year) - Number(b.year);
+        return (Number(a.year) || 0) - (Number(b.year) || 0);
       case "Name: Z-A":
         return b.name.localeCompare(a.name);
       case "Name: A-Z":
@@ -53,8 +53,8 @@ export default function CollectionPage() {
 
   return (
     <AuthGuard>
-    <main className="pb-24 px-8 max-w-[1440px] mx-auto w-full">
-      <header className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6 pt-12">
+    <main className="pt-28 pb-24 px-8 max-w-[1440px] mx-auto w-full">
+      <header className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
         <div>
           <span className="font-label text-[10px] uppercase tracking-[0.2em] text-primary mb-2 block">Archive Overview</span>
           <h1 className="text-5xl md:text-6xl font-headline font-bold tracking-tighter text-on-surface">My Collection</h1>

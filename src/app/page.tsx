@@ -2,16 +2,16 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useStore } from "@/store/useStore";
+import { useCollectionStore } from "@/store/useCollectionStore";
+import { useIsoStore } from "@/store/useIsoStore";
 import ModelCard from "@/components/ModelCard";
 import { ArrowRight } from "lucide-react";
 
 export default function Page() {
-  const models = useStore((state) => state.models);
-  const isoModels = useStore((state) => state.isoModels);
+  const models = useCollectionStore((state) => state.models);
+  const isoModels = useIsoStore((state) => state.isoModels);
 
   const collectionSlice = models.slice(0, 3);
-  const isoSlice = isoModels.slice(0, 2);
   const favoritesSlice = models.filter((m) => m.isFavorite).slice(0, 2);
 
   return (
@@ -40,12 +40,12 @@ export default function Page() {
             Archiving automotive legends with surgical precision. The definitive platform for the modern scale model collector.
           </p>
           <div className="flex gap-4 pt-4">
-            <Link 
-              href="/collection" 
-              aria-label="Explore the full scale model collection"
+            <Link
+              href="/discover"
+              aria-label="Explore the full scale model catalog"
               className="px-8 py-4 bg-primary-container text-on-primary-container font-headline font-bold uppercase tracking-widest hover:brightness-110 transition-all flex items-center gap-2"
             >
-              Explore Collection
+              Explore Catalog
               <ArrowRight size={20} />
             </Link>
           </div>
@@ -66,11 +66,17 @@ export default function Page() {
           </div>
         </div>
         <div className="flex overflow-x-auto gap-8 pb-8 no-scrollbar scroll-smooth max-w-[1440px] mx-auto w-full">
-          {collectionSlice.map((model) => (
-             <div key={model.id} className="min-w-[320px] md:min-w-[400px]">
-               <ModelCard model={model} />
-             </div>
-          ))}
+          {collectionSlice.length > 0 ? (
+            collectionSlice.map((model) => (
+              <div key={model.id} className="min-w-[320px] md:min-w-[400px]">
+                <ModelCard model={model} />
+              </div>
+            ))
+          ) : (
+            <div className="w-full text-center text-on-surface/50 font-body py-10">
+              No models in your collection yet. Start by exploring the catalog!
+            </div>
+          )}
         </div>
       </section>
 

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useStore } from "@/store/useStore";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useCollectionStore } from "@/store/useCollectionStore";
 import { X, DollarSign, Tag, Award, MapPin, Upload, Loader2, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
@@ -11,24 +11,73 @@ interface AddModalProps {
   onClose: () => void;
 }
 
+const INITIAL_FORM = {
+  name: "",
+  year: "",
+  manufacturer: "",
+  series: "",
+  scale: "1:18",
+  image: "",
+  purchase_price: "",
+  condition: "Mint",
+  grade: "",
+  storage_location: ""
+};
+
 export default function AddModal({ isOpen, onClose }: AddModalProps) {
-  const { addModel } = useStore();
+  const { addModel } = useCollectionStore();
   const [uploading, setUploading] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    year: "",
-    manufacturer: "",
-    series: "",
-    scale: "1:18",
-    image: "",
-    purchase_price: "",
-    condition: "Mint",
-    grade: "",
-    storage_location: ""
-  });
+  const [formData, setFormData] = useState(INITIAL_FORM);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
   const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
+
+  // Reset form when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setFormData(INITIAL_FORM);
+    }
+  }, [isOpen]);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen]);
+
+  // Focus trap
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === "Escape") { onClose(); return; }
+    if (e.key !== "Tab" || !dialogRef.current) return;
+
+    const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusable.length === 0) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (e.shiftKey) {
+      if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+    } else {
+      if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    document.addEventListener("keydown", handleKeyDown);
+    // Focus first focusable element
+    setTimeout(() => {
+      const first = dialogRef.current?.querySelector<HTMLElement>('input, button, select, textarea');
+      first?.focus();
+    }, 50);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, handleKeyDown]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -46,7 +95,7 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
 
     setUploading(true);
     const supabase = createClient();
-    
+
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
@@ -79,48 +128,28 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
         purchase_price: formData.purchase_price ? parseFloat(formData.purchase_price) : undefined
       });
       toast.success(`${formData.name} added to collection`);
+      setFormData(INITIAL_FORM);
       onClose();
-      setFormData({
-        name: "",
-        year: "",
-        manufacturer: "",
-        series: "",
-        scale: "1:18",
-        image: "",
-        purchase_price: "",
-        condition: "Mint",
-        grade: "",
-        storage_location: ""
-      });
     } catch (err) {
       toast.error("Failed to add model");
     }
   };
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
       <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={onClose}></div>
-      <div role="dialog" aria-modal="true" aria-labelledby="add-modal-title" className="relative w-full max-w-3xl bg-surface-container-low border border-white/5 shadow-2xl p-8 rounded-xl max-h-[90vh] overflow-y-auto">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="add-modal-title" className="relative w-full max-w-3xl bg-surface-container-low border border-white/5 shadow-2xl p-5 sm:p-8 rounded-xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-8">
           <h2 id="add-modal-title" className="font-headline text-2xl font-bold uppercase tracking-tight">Catalog New Acquisition</h2>
-          <button onClick={onClose} className="p-2 hover:bg-surface-container-high rounded-full transition-colors">
+          <button onClick={onClose} className="p-2 hover:bg-surface-container-high rounded-full transition-colors" aria-label="Close dialog">
             <X size={20} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-8">
             {/* Left Column: Visual & Core Info */}
             <div className="space-y-6">
                {/* Image Upload Area */}
@@ -152,6 +181,7 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
                     <label className="font-label text-[10px] uppercase tracking-widest text-on-surface/40 mb-2 block">Casting Name</label>
                     <input
                       required
+                      maxLength={200}
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       className="w-full bg-surface-container-highest border-b border-white/10 p-3 outline-none focus:border-primary transition-colors text-sm"
@@ -162,6 +192,7 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
                     <div>
                       <label className="font-label text-[10px] uppercase tracking-widest text-on-surface/40 mb-2 block">Manufacturer</label>
                       <input
+                        required
                         value={formData.manufacturer}
                         onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
                         className="w-full bg-surface-container-highest border-b border-white/10 p-3 outline-none focus:border-primary transition-colors text-sm"
@@ -171,6 +202,7 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
                     <div>
                       <label className="font-label text-[10px] uppercase tracking-widest text-on-surface/40 mb-2 block">Year</label>
                       <input
+                        required
                         value={formData.year}
                         onChange={(e) => setFormData({ ...formData, year: e.target.value })}
                         className="w-full bg-surface-container-highest border-b border-white/10 p-3 outline-none focus:border-primary transition-colors text-sm"
@@ -194,7 +226,7 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
             <div className="space-y-6">
               <div className="bg-surface-dim/30 p-6 rounded-lg border border-white/5 space-y-6">
                 <span className="font-label text-[9px] uppercase tracking-[0.2em] text-primary-container block border-b border-white/5 pb-2">Technical Specifications</span>
-                
+
                 <div className="grid grid-cols-2 gap-6">
                   <div>
                     <div className="flex items-center gap-2 mb-2">

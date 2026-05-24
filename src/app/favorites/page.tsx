@@ -1,15 +1,40 @@
 "use client";
 
-import { useStore } from "@/store/useStore";
+import { useCollectionStore } from "@/store/useCollectionStore";
 import ModelCard from "@/components/ModelCard";
 import Image from "next/image";
-import { Download, Heart, Maximize2, BarChart3, PlusCircle } from "lucide-react";
+import { Download, Heart, Maximize2, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import AuthGuard from "@/components/AuthGuard";
 
+function exportFavoritesCSV(favorites: ReturnType<typeof useCollectionStore.getState>["models"]) {
+  if (favorites.length === 0) {
+    toast.error("No favorites to export.");
+    return;
+  }
+  const headers = ["Name", "Year", "Manufacturer", "Series", "Scale", "Condition", "Grade", "Purchase Price", "Storage Location"];
+  const rows = favorites.map(m => [
+    m.name, m.year, m.manufacturer, m.series, m.scale,
+    m.condition || "", m.grade || "",
+    m.purchase_price != null ? String(m.purchase_price) : "",
+    m.storage_location || "",
+  ]);
+  const csv = [headers, ...rows]
+    .map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `favorites-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast.success("Favorites exported successfully!");
+}
+
 export default function FavoritesPage() {
-  const models = useStore(state => state.models);
-  const toggleFavorite = useStore(state => state.toggleFavorite);
+  const models = useCollectionStore(state => state.models);
+  const toggleFavorite = useCollectionStore(state => state.toggleFavorite);
   const favorites = models.filter(m => m.isFavorite);
 
   const heroFavorite = favorites[0];
@@ -41,7 +66,10 @@ export default function FavoritesPage() {
             <div className="font-headline text-2xl font-bold text-on-surface">₹{totalFavoritesValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           </div>
           <div className="w-[1px] h-10 bg-outline-variant/15"></div>
-          <button className="bg-surface-container-high hover:bg-surface-container-highest px-6 py-3 flex items-center gap-2 transition-all group">
+          <button
+            onClick={() => exportFavoritesCSV(favorites)}
+            className="bg-surface-container-high hover:bg-surface-container-highest px-6 py-3 flex items-center gap-2 transition-all group"
+          >
             <Download size={16} className="text-on-surface-variant" />
             <span className="font-label text-[10px] tracking-widest uppercase">Export List</span>
           </button>
@@ -66,7 +94,14 @@ export default function FavoritesPage() {
               <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
               {/* Action Overlay */}
               <div className="absolute top-6 right-6 flex flex-col gap-3">
-                <button aria-label={`Unfavorite ${heroFavorite.name}`} className="w-12 h-12 bg-primary-container text-white flex items-center justify-center shadow-2xl hover:scale-110 transition-transform">
+                <button
+                  aria-label={`Remove ${heroFavorite.name} from favorites`}
+                  onClick={() => {
+                    toggleFavorite(heroFavorite.id);
+                    toast.success(`${heroFavorite.name} removed from favorites`);
+                  }}
+                  className="w-12 h-12 bg-primary-container text-white flex items-center justify-center shadow-2xl hover:scale-110 transition-transform"
+                >
                   <Heart size={24} fill="white" />
                 </button>
                 <button aria-label={`View ${heroFavorite.name} fullscreen`} className="w-12 h-12 bg-black/40 backdrop-blur-md text-white flex items-center justify-center hover:bg-primary-container transition-colors">
@@ -81,7 +116,7 @@ export default function FavoritesPage() {
                   <span className="bg-primary-container/10 border border-primary-container/20 px-3 py-1 font-label text-[10px] tracking-widest uppercase text-primary">Masterpiece</span>
                 </div>
                 <h2 className="font-headline text-4xl font-bold tracking-tight text-on-surface uppercase">{heroFavorite.name}</h2>
-                <p className="font-body text-sm text-on-surface-variant/60 mt-2">{heroFavorite.year} • {heroFavorite.manufacturer} • {heroFavorite.series} Precision</p>
+                <p className="font-body text-sm text-on-surface-variant/60 mt-2">{heroFavorite.year} • {heroFavorite.manufacturer}{heroFavorite.series ? ` • ${heroFavorite.series}` : ""}</p>
               </div>
               {heroFavorite.purchase_price != null && heroFavorite.purchase_price > 0 && (
                 <div className="flex flex-col items-end">
@@ -113,7 +148,14 @@ export default function FavoritesPage() {
               <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent"></div>
               {/* Action Overlay */}
               <div className="absolute top-4 right-4">
-                <button className="w-10 h-10 bg-primary-container text-white flex items-center justify-center hover:scale-110 transition-transform">
+                <button
+                  aria-label={`Remove ${secondaryFavorite.name} from favorites`}
+                  onClick={() => {
+                    toggleFavorite(secondaryFavorite.id);
+                    toast.success(`${secondaryFavorite.name} removed from favorites`);
+                  }}
+                  className="w-11 h-11 bg-primary-container text-white flex items-center justify-center hover:scale-110 transition-transform"
+                >
                   <Heart size={20} fill="white" />
                 </button>
               </div>
@@ -161,24 +203,37 @@ export default function FavoritesPage() {
           </div>
         </div>
 
-        {/* Suggestion Card */}
+        {/* Stats summary card (replaces hardcoded recommendation) */}
         <div className="lg:col-span-9 bg-surface-container-low p-10 flex flex-col md:flex-row items-center gap-10">
-          <div className="w-full md:w-1/3 aspect-video bg-surface-container-highest relative group cursor-pointer overflow-hidden">
-            <Image 
-              fill
-              alt="Porsche 911 Singer" 
-              className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500" 
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMp9ZuTOC0cWdfBLAWbF9nH0gbLYeCv8_9eDpmPDQD7oADLrJYkM5J1_mLUGd33zh48McUUVigNNlgPIAyIv8wo-jKYXI4Jc_pP7OrDYDOjjWpiGJKez77UEQeWM6ULL5QzgUq1UyAJ4HWJZr1aR2_QySC9RtQqPbY6eF8nQtMhOis_f8PpiXBI-SsMBRvZA-8ykrDEWk5zh1MixOkaX-5xCpHTnEUK2LyKDSfPMjTopcVPtiztjrC0F4sfP_wOL1l5AbbsHi8Dw8"
-            />
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-background/60">
-              <PlusCircle className="text-white w-10 h-10" />
-            </div>
-          </div>
           <div className="flex-1">
-            <div className="font-label text-[10px] tracking-[0.3em] text-on-surface-variant/40 uppercase mb-4">Curator Recommendation</div>
-            <h3 className="font-headline text-3xl font-bold uppercase mb-4 leading-tight">Porsche 911 <span className="text-primary-container">Reimagined</span> by Singer</h3>
-            <p className="font-body text-sm text-on-surface-variant/60 mb-6 max-w-md">Based on your interest in high-performance engineering, this restoration masterpiece belongs in your crown jewels.</p>
-            <button className="border-b-2 border-primary-container pb-1 font-label text-[10px] tracking-widest uppercase hover:text-primary transition-colors">View Detailed Specs</button>
+            <div className="font-label text-[10px] tracking-[0.3em] text-on-surface-variant/40 uppercase mb-4">Favorites Breakdown</div>
+            <h3 className="font-headline text-3xl font-bold uppercase mb-4 leading-tight">Your <span className="text-primary-container">Top</span> Picks</h3>
+            <p className="font-body text-sm text-on-surface-variant/60 mb-6 max-w-md">
+              {favorites.length === 0
+                ? "You haven't marked any favorites yet. Browse your collection and tap the heart icon on your most prized models."
+                : `You have ${favorites.length} favorite${favorites.length === 1 ? '' : 's'} worth a total of ₹${totalFavoritesValue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}. Keep curating your crown jewels.`
+              }
+            </p>
+            {favorites.length > 0 && (
+              <div className="flex gap-8">
+                <div>
+                  <div className="font-headline text-2xl font-bold text-on-surface">{favorites.length}</div>
+                  <div className="font-label text-[9px] uppercase tracking-widest text-on-surface/40">Favorites</div>
+                </div>
+                <div>
+                  <div className="font-headline text-2xl font-bold text-on-surface">
+                    {Array.from(new Set(favorites.map(f => f.manufacturer).filter(Boolean))).length}
+                  </div>
+                  <div className="font-label text-[9px] uppercase tracking-widest text-on-surface/40">Manufacturers</div>
+                </div>
+                <div>
+                  <div className="font-headline text-2xl font-bold text-on-surface">
+                    {Array.from(new Set(favorites.map(f => f.scale).filter(Boolean))).length}
+                  </div>
+                  <div className="font-label text-[9px] uppercase tracking-widest text-on-surface/40">Scales</div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

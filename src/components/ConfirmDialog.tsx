@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { AlertTriangle } from "lucide-react";
 
 interface ConfirmDialogProps {
@@ -14,6 +14,7 @@ interface ConfirmDialogProps {
 
 export default function ConfirmDialog({ isOpen, title, message, confirmLabel = "Delete", onConfirm, onCancel }: ConfirmDialogProps) {
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -21,14 +22,39 @@ export default function ConfirmDialog({ isOpen, title, message, confirmLabel = "
     }
   }, [isOpen]);
 
+  // Lock body scroll
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen]);
+
+  // Focus trap + Escape
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === "Escape") { onCancel(); return; }
+    if (e.key !== "Tab" || !dialogRef.current) return;
+
+    const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusable.length === 0) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (e.shiftKey) {
+      if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+    } else {
+      if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  }, [onCancel]);
+
   useEffect(() => {
     if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onCancel();
-    };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onCancel]);
+  }, [isOpen, handleKeyDown]);
 
   if (!isOpen) return null;
 
@@ -36,6 +62,7 @@ export default function ConfirmDialog({ isOpen, title, message, confirmLabel = "
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
       <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={onCancel} />
       <div
+        ref={dialogRef}
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="confirm-title"
@@ -53,13 +80,13 @@ export default function ConfirmDialog({ isOpen, title, message, confirmLabel = "
           <button
             ref={cancelRef}
             onClick={onCancel}
-            className="px-6 py-2.5 font-headline text-xs tracking-widest uppercase font-bold text-on-surface/60 hover:text-on-surface transition-colors"
+            className="px-6 py-3 font-headline text-xs tracking-widest uppercase font-bold text-on-surface/60 hover:text-on-surface transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
-            className="px-6 py-2.5 bg-error text-white font-headline text-xs tracking-widest uppercase font-bold hover:brightness-110 transition-all rounded-sm"
+            className="px-6 py-3 bg-error text-white font-headline text-xs tracking-widest uppercase font-bold hover:brightness-110 transition-all rounded-sm"
           >
             {confirmLabel}
           </button>

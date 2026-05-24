@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useStore } from "@/store/useStore";
+import { useIsoStore } from "@/store/useIsoStore";
 import Image from "next/image";
 import AddISOModal from "@/components/AddISOModal";
 import { Plus, Trash2, Info } from "lucide-react";
@@ -9,8 +9,8 @@ import AuthGuard from "@/components/AuthGuard";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function ISOPage() {
-  const isoModels = useStore(state => state.isoModels);
-  const removeISOModel = useStore(state => state.removeISOModel);
+  const isoModels = useIsoStore(state => state.isoModels);
+  const removeIsoModel = useIsoStore(state => state.removeIsoModel);
   const [isModalOpen, setModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
@@ -51,14 +51,12 @@ export default function ISOPage() {
             <div className="w-full md:w-1/2 p-8 flex flex-col justify-between">
               <div>
                 <div className="flex justify-between items-start mb-4">
-                  <span className="bg-surface-bright px-3 py-1 font-label text-[10px] tracking-widest text-on-surface uppercase">Scale 1:18</span>
+                  <span className="bg-surface-bright px-3 py-1 font-label text-[10px] tracking-widest text-on-surface uppercase">Featured Hunt</span>
                   <span className="text-primary font-label text-[10px] tracking-tighter font-bold uppercase border border-primary/20 px-2 py-0.5">{featuredISO.rarity}</span>
                 </div>
                 <h2 className="text-3xl font-headline font-extrabold tracking-tighter uppercase mb-2">{featuredISO.name}</h2>
                 <div className="flex gap-4 text-xs font-label uppercase text-on-surface/40 mb-6">
-                  <span>Collector Edition</span>
-                  <span>•</span>
-                  <span>Premium Series</span>
+                  <span>Target: {featuredISO.targetprice}</span>
                 </div>
               </div>
               <div className="flex justify-between items-center">
@@ -138,7 +136,7 @@ export default function ISOPage() {
         confirmLabel="Remove"
         onConfirm={() => {
           if (deleteTarget) {
-            removeISOModel(deleteTarget.id);
+            removeIsoModel(deleteTarget.id);
             setDeleteTarget(null);
           }
         }}

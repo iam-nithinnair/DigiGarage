@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useStore } from "@/store/useStore";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useCollectionStore } from "@/store/useCollectionStore";
+import { useIsoStore } from "@/store/useIsoStore";
 import { createClient } from "@/lib/supabase/client";
 import {
   Search, Plus, Loader2, ChevronLeft, ChevronRight,
@@ -24,21 +26,28 @@ interface CatalogModel {
   color: string;
   manufacturer: string;
   scale: string;
+  case_code: string | null;
 }
 
 /* ── Constants ─────────────────────────────────────────────── */
 
 const PAGE_SIZE = 40;
 
-const DECADES = [
-  { label: "2020s", start: 2020, end: 2025 },
-  { label: "2010s", start: 2010, end: 2019 },
-  { label: "2000s", start: 2000, end: 2009 },
-  { label: "1990s", start: 1990, end: 1999 },
-  { label: "1980s", start: 1980, end: 1989 },
-  { label: "1970s", start: 1970, end: 1979 },
-  { label: "1968–69", start: 1968, end: 1969 },
+/** Hot Wheels mainline case letters — I and O are skipped (look like 1 and 0) */
+const CASE_CODES = ["A", "B", "C", "D", "E", "F", "G", "H", "J", "K", "L", "M", "N", "P", "Q"] as const;
+
+/** All years present in the catalog (newest first) */
+const CATALOG_YEARS = [
+  2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016,
+  2015, 2014, 2013, 2012, 2011, 2010, 2009, 2008, 2007, 2006,
+  2005, 2004, 2003, 2002, 2000, 1996, 1995, 1994, 1993, 1992,
+  1991, 1990, 1989, 1988, 1987, 1986, 1985, 1984, 1983, 1982,
+  1981, 1980, 1979, 1978, 1977, 1976, 1975, 1974, 1969, 1968,
 ];
+
+/* ── Global image URL cache (persists across navigations) ── */
+
+const imageUrlCache: Record<string, string> = {};
 
 /* ── Helpers ───────────────────────────────────────────────── */
 
@@ -70,6 +79,20 @@ function getColorHex(colorName: string): string | null {
   return null;
 }
 
+/** Clean wiki template markup from series names */
+function cleanSeries(raw: string): string {
+  if (!raw) return "";
+  let s = raw
+    .replace(/\{\{[^}]*\}\}/g, "")
+    .replace(/bgcolor="[^"]*"\s*\|/g, "")
+    .replace(/\[\[[^\]]*\|([^\]]*)\]\]/g, "$1")
+    .replace(/\[\[([^\]]*)\]\]/g, "$1")
+    .replace(/'''?/g, "")
+    .trim();
+  s = s.replace(/\s{2,}/g, " ");
+  return s;
+}
+
 /** Safely get Supabase client — returns null during static build */
 function getSupabase() {
   try { return createClient(); } catch { return null; }
@@ -78,8 +101,11 @@ function getSupabase() {
 /* ── Page Component ────────────────────────────────────────── */
 
 export default function DiscoverPage() {
-  const { addModel, models, user, addISOModel, isoModels } = useStore();
+  const { user } = useAuthStore();
+  const { addModel, models } = useCollectionStore();
+  const { addIsoModel, isoModels } = useIsoStore();
   const gridRef = useRef<HTMLDivElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   /* Data state */
   const [catalog, setCatalog] = useState<CatalogModel[]>([]);
@@ -88,22 +114,34 @@ export default function DiscoverPage() {
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [page, setPage] = useState(0);
 
-  /* Image state */
-  const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
+  /* Image state — initialised from global cache */
+  const [imageUrls, setImageUrls] = useState<Record<string, string>>(imageUrlCache);
   const [imagesLoading, setImagesLoading] = useState(false);
 
   /* Filter state */
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [selectedDecade, setSelectedDecade] = useState<{ start: number; end: number } | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [seriesFilter, setSeriesFilter] = useState("");
   const [debouncedSeries, setDebouncedSeries] = useState("");
+  const [selectedCase, setSelectedCase] = useState<string>("");
   const [sortBy, setSortBy] = useState("year_desc");
 
   /* UI state */
   const [selectedModel, setSelectedModel] = useState<CatalogModel | null>(null);
   const [addingId, setAddingId] = useState<number | null>(null);
+
+  /* ── O(1) collection/ISO lookups via Set ────────────────── */
+  const collectionNames = useMemo(
+    () => new Set(models.map(m => m.name.toLowerCase())),
+    [models]
+  );
+  const isoNames = useMemo(
+    () => new Set(isoModels.map(m => m.name.toLowerCase())),
+    [isoModels]
+  );
+  const isInCollection = (name: string) => collectionNames.has(name.toLowerCase());
+  const isInISO = (name: string) => isoNames.has(name.toLowerCase());
 
   /* ── Debounced inputs ──────────────────────────────────── */
   useEffect(() => {
@@ -126,14 +164,9 @@ export default function DiscoverPage() {
       let query = supabase.from("hotwheels_catalog").select("*", { count: "exact" });
 
       if (debouncedSearch.length >= 2) query = query.ilike("model_name", `%${debouncedSearch}%`);
-
-      if (selectedYear) {
-        query = query.eq("year", selectedYear);
-      } else if (selectedDecade) {
-        query = query.gte("year", selectedDecade.start).lte("year", selectedDecade.end);
-      }
-
+      if (selectedYear) query = query.eq("year", selectedYear);
       if (debouncedSeries.length >= 2) query = query.ilike("series", `%${debouncedSeries}%`);
+      if (selectedCase) query = query.eq("case_code", selectedCase);
 
       switch (sortBy) {
         case "year_desc": query = query.order("year", { ascending: false }).order("model_name", { ascending: true }); break;
@@ -158,20 +191,19 @@ export default function DiscoverPage() {
       setIsLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch, selectedYear, selectedDecade, debouncedSeries, sortBy, page]);
+  }, [debouncedSearch, selectedYear, debouncedSeries, selectedCase, sortBy, page]);
 
   useEffect(() => { fetchCatalog(); }, [fetchCatalog]);
 
-  /* ── Fetch image URLs from Fandom Wiki ─────────────────── */
+  /* ── Fetch image URLs from Fandom Wiki (with global cache) */
   useEffect(() => {
     let cancelled = false;
 
     async function loadImages() {
       const filenames = catalog
         .map(m => m.image_filename)
-        .filter(f => f && f.trim() !== "" && !f.includes("Not Available") && !imageUrls[f]);
+        .filter(f => f && f.trim() !== "" && !f.includes("Not Available") && !imageUrlCache[f]);
 
-      // Deduplicate
       const unique = [...new Set(filenames)];
       if (unique.length === 0) return;
 
@@ -204,6 +236,8 @@ export default function DiscoverPage() {
       }
 
       if (!cancelled) {
+        // Write to global cache
+        Object.assign(imageUrlCache, newUrls);
         setImageUrls(prev => ({ ...prev, ...newUrls }));
         setImagesLoading(false);
       }
@@ -214,18 +248,49 @@ export default function DiscoverPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [catalog]);
 
-  /* ── Escape to close modal ─────────────────────────────── */
+  /* ── Modal body scroll lock ───────────────────────────── */
+  useEffect(() => {
+    if (selectedModel) {
+      document.body.style.overflow = 'hidden';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [selectedModel]);
+
+  /* ── Modal focus trap + Escape ─────────────────────────── */
   useEffect(() => {
     if (!selectedModel) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setSelectedModel(null); };
+
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { setSelectedModel(null); return; }
+      if (e.key !== "Tab" || !modalRef.current) return;
+
+      const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    };
+
     document.addEventListener("keydown", handler);
+
+    // Auto-focus close button
+    setTimeout(() => {
+      const closeBtn = modalRef.current?.querySelector<HTMLElement>('button');
+      closeBtn?.focus();
+    }, 50);
+
     return () => document.removeEventListener("keydown", handler);
   }, [selectedModel]);
 
-  /* ── Collection / ISO helpers ──────────────────────────── */
-  const isInCollection = (name: string) => models.some(m => m.name.toLowerCase() === name.toLowerCase());
-  const isInISO = (name: string) => isoModels.some(m => m.name.toLowerCase() === name.toLowerCase());
-
+  /* ── Action handlers ──────────────────────────────────── */
   const handleAdd = async (model: CatalogModel) => {
     if (!user) { toast.error("Sign in to acquire models"); return; }
     setAddingId(model.catalog_id);
@@ -250,7 +315,7 @@ export default function DiscoverPage() {
   const handleAddISO = async (model: CatalogModel) => {
     if (!user) { toast.error("Sign in to add to wishlist"); return; }
     try {
-      await addISOModel({ name: model.model_name, targetprice: "TBD", rarity: "Common" });
+      await addIsoModel({ name: model.model_name, targetprice: "TBD", rarity: "Common" });
       toast.success(`${model.model_name} wishlisted!`);
     } catch (err) {
       console.error("ISO add failed:", err);
@@ -266,15 +331,19 @@ export default function DiscoverPage() {
   };
 
   /* ── Filter helpers ────────────────────────────────────── */
-  const hasFilters = !!searchQuery || !!selectedDecade || !!selectedYear || !!seriesFilter || sortBy !== "year_desc";
+  const hasFilters = !!searchQuery || !!selectedYear || !!seriesFilter || !!selectedCase || sortBy !== "year_desc";
   const clearFilters = () => {
-    setSearchQuery(""); setSelectedDecade(null); setSelectedYear(null);
-    setSeriesFilter(""); setSortBy("year_desc"); setPage(0);
+    setSearchQuery(""); setSelectedYear(null);
+    setSeriesFilter(""); setSelectedCase(""); setSortBy("year_desc"); setPage(0);
   };
 
-  const decadeYears = selectedDecade
-    ? Array.from({ length: selectedDecade.end - selectedDecade.start + 1 }, (_, i) => selectedDecade.end - i)
-    : [];
+  /* ── Card keyboard handler ─────────────────────────────── */
+  const handleCardKeyDown = (e: React.KeyboardEvent, model: CatalogModel) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      setSelectedModel(model);
+    }
+  };
 
   /* ── Render ────────────────────────────────────────────── */
   return (
@@ -297,75 +366,55 @@ export default function DiscoverPage() {
       {/* ════ Filters (always visible) ══════════════════════ */}
       <div className="bg-surface-container-low border border-white/5 p-6 mb-6 space-y-5" ref={gridRef}>
 
-        {/* Search (Case Name) */}
+        {/* Search by Model Name */}
         <div>
-          <label className="font-label text-[10px] uppercase tracking-[0.15em] text-on-surface/40 mb-2 block">Case Name</label>
+          <label className="font-label text-[10px] uppercase tracking-[0.15em] text-on-surface/40 mb-2 block">Model Name</label>
           <div className="relative group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface/30 group-focus-within:text-primary transition-colors" size={18} />
             <input
               type="text"
-              placeholder="Search by casting name…"
-              aria-label="Search catalog by casting name"
+              placeholder="Search by model name…"
+              aria-label="Search catalog by model name"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="w-full bg-surface-container-high border border-white/5 py-3.5 pl-12 pr-10 focus:border-primary-container transition-all outline-none font-body text-sm text-on-surface"
             />
             {searchQuery && (
-              <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface/30 hover:text-on-surface transition-colors">
+              <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface/30 hover:text-on-surface transition-colors" aria-label="Clear search">
                 <X size={16} />
               </button>
             )}
           </div>
         </div>
 
-        {/* Era / Year */}
-        <div>
-          <label className="font-label text-[10px] uppercase tracking-[0.15em] text-on-surface/40 mb-2 block">Year</label>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => { setSelectedDecade(null); setSelectedYear(null); setPage(0); }}
-              className={`px-4 py-2 font-label text-xs uppercase tracking-wider transition-all
-                ${!selectedDecade ? "bg-primary-container text-on-primary-container" : "bg-surface-container-high text-on-surface/50 hover:text-on-surface"}`}
+        {/* Year + Case Dropdowns */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="sm:w-56">
+            <label className="font-label text-[10px] uppercase tracking-[0.15em] text-on-surface/40 mb-2 block">Year</label>
+            <select
+              value={selectedYear ?? ""}
+              onChange={e => { setSelectedYear(e.target.value ? Number(e.target.value) : null); setPage(0); }}
+              className="w-full bg-surface-container-high border border-white/5 py-3 px-4 font-body text-sm text-on-surface outline-none focus:border-primary-container/50 cursor-pointer"
             >
-              All Eras
-            </button>
-            {DECADES.map(d => (
-              <button
-                key={d.label}
-                onClick={() => { setSelectedDecade({ start: d.start, end: d.end }); setSelectedYear(null); setPage(0); }}
-                className={`px-4 py-2 font-label text-xs uppercase tracking-wider transition-all
-                  ${selectedDecade?.start === d.start
-                    ? "bg-primary-container text-on-primary-container"
-                    : "bg-surface-container-high text-on-surface/50 hover:text-on-surface"
-                  }`}
-              >
-                {d.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Individual year chips */}
-          {selectedDecade && decadeYears.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-3">
-              <button
-                onClick={() => { setSelectedYear(null); setPage(0); }}
-                className={`px-3 py-1.5 font-label text-[11px] tracking-wider transition-all border
-                  ${!selectedYear ? "bg-primary/20 text-primary border-primary/30" : "bg-surface-container-high text-on-surface/40 hover:text-on-surface border-transparent"}`}
-              >
-                All
-              </button>
-              {decadeYears.map(y => (
-                <button
-                  key={y}
-                  onClick={() => { setSelectedYear(y); setPage(0); }}
-                  className={`px-3 py-1.5 font-label text-[11px] tracking-wider transition-all border
-                    ${selectedYear === y ? "bg-primary/20 text-primary border-primary/30" : "bg-surface-container-high text-on-surface/40 hover:text-on-surface border-transparent"}`}
-                >
-                  {y}
-                </button>
+              <option value="">All Years</option>
+              {CATALOG_YEARS.map(y => (
+                <option key={y} value={y}>{y}</option>
               ))}
-            </div>
-          )}
+            </select>
+          </div>
+          <div className="sm:w-56">
+            <label className="font-label text-[10px] uppercase tracking-[0.15em] text-on-surface/40 mb-2 block">Case</label>
+            <select
+              value={selectedCase}
+              onChange={e => { setSelectedCase(e.target.value); setPage(0); }}
+              className="w-full bg-surface-container-high border border-white/5 py-3 px-4 font-body text-sm text-on-surface outline-none focus:border-primary-container/50 cursor-pointer"
+            >
+              <option value="">All Cases</option>
+              {CASE_CODES.map(code => (
+                <option key={code} value={code}>Case {code}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Series + Sort */}
@@ -413,7 +462,7 @@ export default function DiscoverPage() {
             <>
               Showing <span className="text-on-surface font-bold">{(page * PAGE_SIZE + 1).toLocaleString()}–{Math.min((page + 1) * PAGE_SIZE, totalCount).toLocaleString()}</span>{" "}
               of <span className="text-on-surface font-bold">{totalCount.toLocaleString()}</span> models
-              {(debouncedSearch || selectedDecade || selectedYear || debouncedSeries) && <span className="text-primary ml-2">(filtered)</span>}
+              {(debouncedSearch || selectedYear || debouncedSeries || selectedCase) && <span className="text-primary ml-2">(filtered)</span>}
             </>
           )}
         </p>
@@ -454,7 +503,11 @@ export default function DiscoverPage() {
               <article
                 key={model.catalog_id}
                 onClick={() => setSelectedModel(model)}
-                className="bg-surface-container-low group hover:bg-surface-container transition-all duration-300 border border-white/5 hover:border-white/10 cursor-pointer flex flex-col relative overflow-hidden"
+                onKeyDown={(e) => handleCardKeyDown(e, model)}
+                tabIndex={0}
+                role="button"
+                aria-label={`View details for ${model.model_name}`}
+                className="bg-surface-container-low group hover:bg-surface-container focus-visible:ring-2 focus-visible:ring-primary transition-all duration-300 border border-white/5 hover:border-white/10 cursor-pointer flex flex-col relative overflow-hidden outline-none"
               >
                 {/* ── Image ── */}
                 <div className="aspect-[4/3] relative overflow-hidden bg-[#080808] flex items-center justify-center">
@@ -477,12 +530,18 @@ export default function DiscoverPage() {
                     </div>
                   )}
 
-                  {/* Gradient overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent opacity-60 pointer-events-none" />
 
-                  {/* Year badge */}
-                  <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-sm text-on-surface font-headline text-[11px] font-bold px-2.5 py-1 tracking-wider z-10">
-                    {model.year}
+                  {/* Year + Case badges */}
+                  <div className="absolute bottom-3 left-3 flex items-center gap-1.5 z-10">
+                    <div className="bg-black/70 backdrop-blur-sm text-on-surface font-headline text-[11px] font-bold px-2.5 py-1 tracking-wider">
+                      {model.year}
+                    </div>
+                    {model.case_code && (
+                      <div className="bg-primary-container/80 backdrop-blur-sm text-on-primary-container font-headline text-[10px] font-bold px-2 py-1 tracking-widest">
+                        Case {model.case_code}
+                      </div>
+                    )}
                   </div>
 
                   {/* Status badges */}
@@ -513,10 +572,10 @@ export default function DiscoverPage() {
                     {model.model_name}
                   </h3>
 
-                  {model.series && (
+                  {model.series && cleanSeries(model.series) && (
                     <div className="flex items-center gap-1.5 text-primary/70 mb-1">
                       <Layers size={11} className="shrink-0" />
-                      <span className="font-label text-[10px] tracking-wider uppercase truncate font-bold">{model.series}</span>
+                      <span className="font-label text-[10px] tracking-wider uppercase truncate font-bold">{cleanSeries(model.series)}</span>
                       {model.series_number && <span className="font-label text-[9px] text-on-surface/25 shrink-0">({model.series_number})</span>}
                     </div>
                   )}
@@ -577,6 +636,7 @@ export default function DiscoverPage() {
             onClick={() => changePage(Math.max(0, page - 1))}
             disabled={page === 0}
             className="p-2.5 bg-surface-container border border-white/5 text-on-surface/50 hover:text-on-surface disabled:opacity-20 disabled:cursor-default transition-all"
+            aria-label="Previous page"
           >
             <ChevronLeft size={18} />
           </button>
@@ -588,6 +648,7 @@ export default function DiscoverPage() {
               <button
                 key={p}
                 onClick={() => changePage(p as number)}
+                aria-current={page === p ? "page" : undefined}
                 className={`w-10 h-10 font-label text-xs transition-all
                   ${page === p
                     ? "bg-primary-container text-on-primary-container font-bold"
@@ -603,6 +664,7 @@ export default function DiscoverPage() {
             onClick={() => changePage(Math.min(totalPages - 1, page + 1))}
             disabled={page === totalPages - 1}
             className="p-2.5 bg-surface-container border border-white/5 text-on-surface/50 hover:text-on-surface disabled:opacity-20 disabled:cursor-default transition-all"
+            aria-label="Next page"
           >
             <ChevronRight size={18} />
           </button>
@@ -629,6 +691,7 @@ export default function DiscoverPage() {
             <div className="absolute inset-0 bg-background/95 backdrop-blur-2xl" onClick={() => setSelectedModel(null)} />
 
             <div
+              ref={modalRef}
               role="dialog"
               aria-modal="true"
               aria-labelledby="catalog-modal-title"
@@ -655,15 +718,16 @@ export default function DiscoverPage() {
                 <button
                   onClick={() => setSelectedModel(null)}
                   className="absolute top-4 right-4 p-2 hover:bg-surface-bright transition-all text-on-surface/20 hover:text-on-surface z-20"
+                  aria-label="Close detail view"
                 >
                   <X size={24} />
                 </button>
 
                 {/* Series label */}
-                {selectedModel.series && (
+                {selectedModel.series && cleanSeries(selectedModel.series) && (
                   <div className="flex items-center gap-3 mb-4">
                     <div className="h-[2px] w-10 bg-primary" />
-                    <span className="font-label text-[11px] uppercase tracking-[0.4em] text-primary font-bold">{selectedModel.series}</span>
+                    <span className="font-label text-[11px] uppercase tracking-[0.4em] text-primary font-bold">{cleanSeries(selectedModel.series)}</span>
                   </div>
                 )}
 
@@ -678,6 +742,7 @@ export default function DiscoverPage() {
                   {selectedModel.toy_number && <InfoCell label="Toy Number" value={selectedModel.toy_number} icon={<Hash size={13} />} />}
                   {selectedModel.collector_number && <InfoCell label="Collector #" value={selectedModel.collector_number} icon={<Tag size={13} />} />}
                   {selectedModel.series_number && <InfoCell label="Series #" value={selectedModel.series_number} icon={<Layers size={13} />} />}
+                  {selectedModel.case_code && <InfoCell label="Case" value={`Case ${selectedModel.case_code}`} icon={<Database size={13} />} />}
                   {selectedModel.color && (
                     <div className="bg-surface-container p-3 border border-white/5">
                       <div className="flex items-center gap-1.5 mb-1.5">
